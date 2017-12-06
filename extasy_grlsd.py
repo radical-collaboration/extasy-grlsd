@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-__author__ = "Vivek <vivek.balasubramanian@rutgers.edu>"
-__copyright__ = "Copyright 2017, http://radical.rutgers.edu"
-__license__ = "MIT"
-__use_case_name__ = "'Gromacs + LSDMap' simulation-analysis using EnTK 0.6"
+__author__ = 'Vivek <vivek.balasubramanian@rutgers.edu>'
+__copyright__ = 'Copyright 2017, http://radical.rutgers.edu'
+__license__ = 'MIT'
+__use_case_name__ = 'Gromacs + LSDMap simulation-analysis using EnTK 0.6'
 
 
 from radical.entk import Pipeline, Stage, Task, AppManager, ResourceManager
@@ -13,7 +13,11 @@ import glob
 import sys
 import imp
 import json
+import traceback
 
+
+os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://entk:entk@ds033196.mlab.com:33196/extasy_grlsd'
+os.environ['RADICAL_ENTK_VERBOSE'] = 'INFO'
 
 def create_workflow(Kconfig):
 
@@ -36,12 +40,12 @@ def create_workflow(Kconfig):
     '''
     pre_proc_stage = Stage()
     pre_proc_task = Task()
-    pre_proc_task.pre_exec = ["module load python"]
+    pre_proc_task.pre_exec = ['module load bwpy']
     pre_proc_task.executable = ['python']
-    pre_proc_task.arguments = ['spliter.py',
-                               '--numCUs=%s' % Kconfig.num_CUs,
-                               '--inputfile=%s' % os.path.basename(Kconfig.md_input_file)
-                               ]
+    pre_proc_task.arguments = [ 'spliter.py',
+                                Kconfig.num_CUs,
+                                os.path.basename(Kconfig.md_input_file)
+                            ]
     pre_proc_task.copy_input_data = ['$SHARED/%s' % os.path.basename(Kconfig.md_input_file),
                                      '$SHARED/spliter.py',
                                      '$SHARED/gro.py'
@@ -49,7 +53,7 @@ def create_workflow(Kconfig):
     pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
 
     pre_proc_stage.add_tasks(pre_proc_task)
-    wf.add_stage(pre_proc_stage)
+    wf.add_stages(pre_proc_stage)
     # ------------------------------------------------------------------------------------------------------------------
 
     cur_iter = 0
@@ -69,11 +73,15 @@ def create_workflow(Kconfig):
         for sim_num in range(ENSEMBLE_SIZE):
 
             sim_task = Task()
-            sim_task.pre_exec = ['module load gromacs', 'module load python']
+            sim_task.pre_exec = [   'source /u/sciteam/balasubr/modules/gromacs/build-cpu-serial/bin/GMXRC.bash', 
+                                    'module load bwpy',
+                                    'module load platform-mpi',
+                                    'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
+                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH']
             sim_task.executable = ['python']
             sim_task.arguments = ['run.py',
-                                  "--mdp", os.path.basename(Kconfig.mdp_file),
-                                  "--top", os.path.basename(Kconfig.top_file),
+                                  '--mdp', os.path.basename(Kconfig.mdp_file),
+                                  '--top', os.path.basename(Kconfig.top_file),
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro']
             sim_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.mdp_file)),
@@ -104,7 +112,8 @@ def create_workflow(Kconfig):
 
         pre_ana_stage = Stage()
         pre_ana_task = Task()
-        pre_ana_task.pre_exec = ['module load python']
+        pre_ana_task.pre_exec = [   'source /u/sciteam/balasubr/modules/gromacs/build-cpu-serial/bin/GMXRC.bash',
+                                    'module load bwpy']
         pre_ana_task.executable = ['python']
         pre_ana_task.arguments = ['pre_analyze.py',
                                   Kconfig.num_CUs,
@@ -112,7 +121,7 @@ def create_workflow(Kconfig):
                                   '.'
                                   ]
 
-        pre_ana_task.link_input_data = ["$SHARED/pre_analyze.py > pre_analyze.py"]
+        pre_ana_task.link_input_data = ['$SHARED/pre_analyze.py > pre_analyze.py']
         for sim_num in range(ENSEMBLE_SIZE):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
@@ -131,7 +140,11 @@ def create_workflow(Kconfig):
 
         ana_stage = Stage()
         ana_task = Task()
-        ana_task.pre_exec = ['module load python']
+        ana_task.pre_exec = [   'module load bwpy',
+                                'module load platform-mpi',
+                                'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
+                                'export PATH=/u/sciteam/balasubr/.local/bin:$PATH'
+                                ]
         ana_task.executable = ['lsdmap']
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
                               '-c', 'tmpha.gro',
@@ -149,7 +162,7 @@ def create_workflow(Kconfig):
             ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter]
 
         if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'cur_iter]
+            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
 
         ana_stage.add_tasks(ana_task)
         wf.add_stages(ana_stage)
@@ -169,42 +182,54 @@ def create_workflow(Kconfig):
 
         post_ana_stage = Stage()
         post_ana_task = Task()
-        post_ana_task.pre_exec = ['module load python']
+        post_ana_task.pre_exec = [  'module load bwpy',
+                                    'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
+                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH'
+                                ]
         post_ana_task.executable = ['python']
-        post_ana_task.arguments = ["--num_runs=%s" % Kconfig.num_runs,
-                                   "--out=out.gro",
-                                   "--cycle=%s" % cur_iter,
-                                   "--max_dead_neighbors=%s" % Kconfig.max_dead_neighbors,
-                                   "--max_alive_neighbors=%s" % Kconfig.max_alive_neighbors,
-                                   "--numCUs=%s" % Kconfig.num_CUs]
+        post_ana_task.arguments = [ 'post_analyze.py',                                   
+                                    Kconfig.num_runs,
+                                    'tmpha.ev',
+                                    'ncopies.nc',
+                                    'tmp.gro',
+                                    'out.nn',
+                                    'weight.w',
+                                    'out.gro',
+                                    Kconfig.max_alive_neighbors,
+                                    Kconfig.max_dead_neighbors,
+                                    'input.gro',
+                                    cur_iter,
+                                    Kconfig.num_CUs]
 
-        post_ana_task.link_input_data = ["$SHARED/post_analyze.py > post_analyze.py",
-                                         "$SHARED/selection.py > selection.py",
-                                         "$SHARED/reweighting.py > reweighting.py",
-                                         "$SHARED/spliter.py > spliter.py",
-                                         "$SHARED/gro.py > gro.py",
-                                         "$SHARED/iter_%s/tmp.gro > tmp.gro" % cur_iter,
-                                         "$SHARED/iter_%s/tmpha.ev > tmpha.ev" % cur_iter,
-                                         "$SHARED/iter_%s/out.nn > out.nn" % cur_iter,
-                                         "$SHARED/input.gro > input.gro"]
+        post_ana_task.link_input_data = ['$SHARED/post_analyze.py > post_analyze.py',
+                                         '$SHARED/selection.py > selection.py',
+                                         '$SHARED/reweighting.py > reweighting.py',
+                                         '$SHARED/spliter.py > spliter.py',
+                                         '$SHARED/gro.py > gro.py',
+                                         '$SHARED/iter_%s/tmp.gro > tmp.gro' % cur_iter,
+                                         '$SHARED/iter_%s/tmpha.ev > tmpha.ev' % cur_iter,
+                                         '$SHARED/iter_%s/out.nn > out.nn' % cur_iter,
+                                         '$SHARED/input.gro > input.gro']
 
         if cur_iter > 0:
-            post_ana.link_input_data += ['%s/weight.w > weight_new.w' % ana_task_ref]
+            post_ana_task.link_input_data += ['%s/weight.w > weight_new.w' % ana_task_ref]
 
         if(cur_iter % Kconfig.nsave == 0):
-            post_ana.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
+            post_ana_task.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
                                              'weight.w > output/iter%s/weight.w' % cur_iter]
 
-        ana_stage.add_tasks(post_ana_task)
+        post_ana_stage.add_tasks(post_ana_task)
         wf.add_stages(post_ana_stage)
         # --------------------------------------------------------------------------------------------------------------
+
+        cur_iter += 1
 
     return wf
 
 
 # ------------------------------------------------------------------------------
 #
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     try:
 
@@ -235,7 +260,7 @@ if __name__ == "__main__":
             'walltime': RPconfig.WALLTIME,
             'cores': RPconfig.PILOTSIZE,
             'project': RPconfig.ALLOCATION,
-            'queue': RPconfig.QUEUE,
+            #'queue': RPconfig.QUEUE,
             'access_schema': 'gsissh'
         }
 
@@ -273,4 +298,5 @@ if __name__ == "__main__":
 
     except Exception as ex:
 
-        print "Error: {0}".format(str(er))
+        print 'Error: {0}'.format(str(ex))
+        print traceback.format_exc()
