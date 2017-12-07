@@ -79,6 +79,7 @@ def create_workflow(Kconfig):
                                     'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
                                     'export PATH=/u/sciteam/balasubr/.local/bin:$PATH']
             sim_task.executable = ['python']
+            sim_task.cores = 16
             sim_task.arguments = ['run.py',
                                   '--mdp', os.path.basename(Kconfig.mdp_file),
                                   '--top', os.path.basename(Kconfig.top_file),
@@ -95,7 +96,7 @@ def create_workflow(Kconfig):
                 sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (pre_proc_task_ref, sim_num))
 
             else:
-                sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (ana_task_ref, sim_num))
+                sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (post_ana_task_ref, sim_num))
 
             sim_task_ref.append('$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, sim_stage.uid, sim_task.uid))
             sim_stage.add_tasks(sim_task)
@@ -164,6 +165,9 @@ def create_workflow(Kconfig):
         if(cur_iter % Kconfig.nsave == 0):
             ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
 
+
+        ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
+
         ana_stage.add_tasks(ana_task)
         wf.add_stages(ana_stage)
         # --------------------------------------------------------------------------------------------------------------
@@ -217,6 +221,8 @@ def create_workflow(Kconfig):
         if(cur_iter % Kconfig.nsave == 0):
             post_ana_task.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
                                              'weight.w > output/iter%s/weight.w' % cur_iter]
+
+        post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
         post_ana_stage.add_tasks(post_ana_task)
         wf.add_stages(post_ana_stage)
