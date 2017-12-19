@@ -1,5 +1,5 @@
 # ExTASY (Gromacs, LSDMap)
-
+ 
 
 ## Requirements
 
@@ -10,16 +10,26 @@ and made public from Vivek's account)
 
 ```
 pip install radical.pilot
-git clone git@github.com:radical-cybertools/radical.entk.git
+git clone https://github.com/radical-collaboration/extasy-grlsd.git
 cd radical.entk
 git checkout devel
-cd ..
-pip install radical.entk
+pip install .
+apt-get install rabbitmq-server
+
 ```
 * Note: For the current version, you will have to install RabbitMQ. 
 [This link](http://radicalentk-06.readthedocs.io/en/arch-v0.6/install.html) provides two methods in which
 you can install RabbitMQ.
 
+You will need to use docker to run rabbitMQ for this project.
+For setting up RabbitMQ with Docker use [This Link](http://radicalentk-06.readthedocs.io/en/arch-v0.6/install.html)
+
+Example docker commands to run rabbitmq command 
+
+```
+sudo docker run -d --name rabbit-1  -P rabbitmq:3
+```
+* Note: that if you will run rabbitmq you will need to make a different name for each rabbitmq-server 
 
 ## Setting up access to HPCs
 
