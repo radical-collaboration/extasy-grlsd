@@ -144,7 +144,8 @@ def create_workflow(Kconfig):
         ana_task.pre_exec = [   'module load bwpy',
                                 'module load platform-mpi',
                                 'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
-                                'export PATH=/u/sciteam/balasubr/.local/bin:$PATH'
+                                'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
+                                'source /u/sciteam/balasubr/ve-extasy/bin/activate'
                                 ]
         ana_task.executable = ['lsdmap']
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
@@ -188,7 +189,8 @@ def create_workflow(Kconfig):
         post_ana_task = Task()
         post_ana_task.pre_exec = [  'module load bwpy',
                                     'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
-                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH'
+                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
+                                    'source /u/sciteam/balasubr/ve-extasy/bin/activate'
                                 ]
         post_ana_task.executable = ['python']
         post_ana_task.arguments = [ 'post_analyze.py',                                   
