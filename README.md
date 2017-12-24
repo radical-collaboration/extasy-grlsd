@@ -11,6 +11,7 @@ and made public from Vivek's account)
 ```
 pip install radical.pilot
 git clone https://github.com/radical-collaboration/extasy-grlsd.git
+git clone https://github.com/radical-cybertools/radical.entk.git
 cd radical.entk
 git checkout devel
 pip install .
