@@ -10,7 +10,8 @@ and made public from Vivek's account)
 
 ```
 pip install radical.pilot
-git clone https://github.com/vivek-bala/radical.entk.git
+git clone https://github.com/radical-collaboration/extasy-grlsd.git
+git clone https://github.com/radical-cybertools/radical.entk.git
 cd radical.entk
 git checkout arch/v0.6
 pip install .
