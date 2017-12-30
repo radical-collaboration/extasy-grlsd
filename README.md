@@ -13,7 +13,7 @@ pip install radical.pilot
 git clone https://github.com/radical-collaboration/extasy-grlsd.git
 git clone https://github.com/radical-cybertools/radical.entk.git
 cd radical.entk
-git checkout devel
+git checkout arch/v0.6
 pip install .
 apt-get install rabbitmq-server
 
@@ -59,8 +59,13 @@ Next, you need to set a few environment variables:
 export RADICAL_ENTK_VERBOSE=info
 export RADICAL_PILOT_DBURL="mongo db url"
 export RP_ENABLE_OLD_DEFINES=True
+export GLOBUS_LOCATION=/usr
 ```
-
+For profiling:
+```
+export RADICAL_ENTK_PROFILE=True
+export RADICAL_PILOT_PROFILE=True
+```
 ## Executing the script
 
 Setup the walltime, allocation and cores you require in resource_config.rcfg.
@@ -73,6 +78,7 @@ the comments to understand the various sections.
 Execution command: 
 
 ```
+rabbitmq-server &
 python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig gromacslsdmap.wcfg
 ```
 
