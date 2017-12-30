@@ -59,6 +59,12 @@ Next, you need to set a few environment variables:
 export RADICAL_ENTK_VERBOSE=info
 export RADICAL_PILOT_DBURL="mongo db url"
 export RP_ENABLE_OLD_DEFINES=True
+export GLOBUS_LOCATION=/usr
+```
+For profiling:
+```
+export RADICAL_ENTK_PROFILE=True
+export RADICAL_PILOT_PROFILE=True
 ```
 
 ## Executing the script
@@ -73,6 +79,7 @@ the comments to understand the various sections.
 Execution command: 
 
 ```
+rabbitmq-server &
 python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig gromacslsdmap.wcfg
 ```
 
