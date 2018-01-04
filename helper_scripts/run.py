@@ -21,6 +21,7 @@ from mpi4py import MPI
 def write_script(grofile_name,output_grofile_name,grompp_options,ndxfile_options,mdpfile_name,topfile_name,tprfile_name,size,mdrun_options,trrfile_name,edrfile_name):
     with open('run.sh','w') as file:
         script="""#!/bin/bash
+        export GMX_MAXBACKUP=-1
         startgro=%(grofile_name)s
         tmpstartgro=tmpstart.gro
         outgro=%(output_grofile_name)s
@@ -33,20 +34,39 @@ def write_script(grofile_name,output_grofile_name,grompp_options,ndxfile_options
         nframes=$((nlines/nlines_per_frame))
 
         rm -rf $outgro
-
+        echo $nframes >> run.log
         for idx in `seq 1 $nframes`; do
 
+            echo $idx >> run.log
             start=$(($nlines_per_frame*(idx-1)+1))
             end=$(($nlines_per_frame*idx))
             sed "$start"','"$end"'!d' $startgro > $tmpstartgro
+            rm -f confout.gro
 
             # gromacs preprocessing & MD
+            #date
             gmx grompp %(grompp_options)s %(ndxfile_options)s -f %(mdpfile_name)s -c $tmpstartgro -p %(topfile_name)s -o %(tprfile_name)s
+            date
+            wait
+            sleep 1
+            #ps
+            #date
+            echo $idx >> run.log
+            #cat md.log >> run_md1.log
             gmx mdrun -nt %(size)s %(mdrun_options)s -s %(tprfile_name)s -o %(trrfile_name)s -e %(edrfile_name)s
-
+            echo "part2"
+            #date
+            wait
+            sleep 20
+            #ps
+            #date
+            echo $idx >> run.log
+            #cat md.log >> run_md2.log
             # store data
             cat confout.gro >> $outgro
-
+            wc -l confout.gro >> run.log
+            wait
+            sleep 1
         done
         rm -f $tmpstartgro
         """%locals()

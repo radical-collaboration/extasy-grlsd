@@ -222,7 +222,8 @@ def create_workflow(Kconfig):
 
         if(cur_iter % Kconfig.nsave == 0):
             post_ana_task.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
-                                             'weight.w > output/iter%s/weight.w' % cur_iter]
+                                             'weight.w > output/iter%s/weight.w' % cur_iter,
+                                             '$SHARED/iter_%s/tmp.gro > output/iter%s/tmp.gro' % (cur_iter,cur_iter) ]
 
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
