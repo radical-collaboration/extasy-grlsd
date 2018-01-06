@@ -1,5 +1,5 @@
 REMOTE_HOST = 'ncsa.bw_aprun'           # Label/Name of the Remote Machine
 ALLOCATION  = 'bamm'                    # Allocation to be charged
-WALLTIME    = 120                        # Walltime to be requested for the pilot
-PILOTSIZE   = 256     #2560                   # Number of cores to be reserved
-QUEUE       = 'debug'      #'high'             # Name of the queue in the remote machine
+WALLTIME    = 60                        # Walltime to be requested for the pilot
+PILOTSIZE   = 256                        # Number of cores to be reserved
+QUEUE       = 'debug'             # Name of the queue in the remote machine

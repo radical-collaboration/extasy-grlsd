@@ -158,17 +158,13 @@ def create_workflow(Kconfig):
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
                                     '$SHARED/iter_%s/tmpha.gro > tmpha.gro' % cur_iter]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
                                      'out.nn > $SHARED/iter_%s/out.nn' % cur_iter]
         if cur_iter > 0:
             ana_task.link_input_data += ['%s/weight.w > weight.w' % ana_task_ref]
-            ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter,
-                                          'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                          'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter]
+            ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter]
 
         if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter,
-                                             'plot-scatter-cluster-10d.png > output/iter%s/plot-scatter-cluster-10d.png']
+            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
 
 
         ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
@@ -191,12 +187,12 @@ def create_workflow(Kconfig):
 
         post_ana_stage = Stage()
         post_ana_task = Task()
-        post_ana_task._name      = 'post_ana_task'
         post_ana_task.pre_exec = [  'module load bwpy',
-                                    'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
-                                    'export PATH=/u/sciteam/hruska/local/bin:$PATH'
+                                    'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
+                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
+                                    'source /u/sciteam/balasubr/ve-extasy/bin/activate'
                                 ]
-        post_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
+        post_ana_task.executable = ['python']
         post_ana_task.arguments = [ 'post_analyze.py',                                   
                                     Kconfig.num_runs,
                                     'tmpha.ev',
@@ -213,7 +209,6 @@ def create_workflow(Kconfig):
 
         post_ana_task.link_input_data = ['$SHARED/post_analyze.py > post_analyze.py',
                                          '$SHARED/selection.py > selection.py',
-                                         '$SHARED/selection-cluster.py > selection-cluster.py',
                                          '$SHARED/reweighting.py > reweighting.py',
                                          '$SHARED/spliter.py > spliter.py',
                                          '$SHARED/gro.py > gro.py',
@@ -291,7 +286,6 @@ if __name__ == '__main__':
                             '%s/pre_analyze.py' % Kconfig.helper_scripts,
                             '%s/post_analyze.py' % Kconfig.helper_scripts,
                             '%s/selection.py' % Kconfig.helper_scripts,
-                            '%s/selection-cluster.py' % Kconfig.helper_scripts,
                             '%s/reweighting.py' % Kconfig.helper_scripts
                             ]
 
