@@ -40,7 +40,8 @@ def create_workflow(Kconfig):
     '''
     pre_proc_stage = Stage()
     pre_proc_task = Task()
-    pre_proc_task.pre_exec = ['module load bwpy']
+    pre_proc_task.pre_exec = ['module load bwpy',
+                              'export iter=-1']
     pre_proc_task.executable = ['python']
     pre_proc_task.arguments = [ 'spliter.py',
                                 Kconfig.num_CUs,
@@ -77,7 +78,8 @@ def create_workflow(Kconfig):
                                     'module load bwpy',
                                     'module load platform-mpi',
                                     'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
-                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH']
+                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
+                                    'export iter=%s' % cur_iter]
             sim_task.executable = ['python']
             sim_task.cores = 16
             sim_task.arguments = ['run.py',
@@ -114,7 +116,8 @@ def create_workflow(Kconfig):
         pre_ana_stage = Stage()
         pre_ana_task = Task()
         pre_ana_task.pre_exec = [   'source /u/sciteam/balasubr/modules/gromacs/build-cpu-serial/bin/GMXRC.bash',
-                                    'module load bwpy']
+                                    'module load bwpy',
+                                    'export iter=%s' % cur_iter]
         pre_ana_task.executable = ['python']
         pre_ana_task.arguments = ['pre_analyze.py',
                                   Kconfig.num_CUs,
@@ -145,7 +148,8 @@ def create_workflow(Kconfig):
                                 'module load platform-mpi',
                                 'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
                                 'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
-                                'source /u/sciteam/balasubr/ve-extasy/bin/activate'
+                                'source /u/sciteam/balasubr/ve-extasy/bin/activate',
+                                'export iter=%s' % cur_iter
                                 ]
         ana_task.executable = ['lsdmap']
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
@@ -194,7 +198,8 @@ def create_workflow(Kconfig):
         post_ana_task._name      = 'post_ana_task'
         post_ana_task.pre_exec = [  'module load bwpy',
                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
-                                    'export PATH=/u/sciteam/hruska/local/bin:$PATH'
+                                    'export PATH=/u/sciteam/hruska/local/bin:$PATH',
+                                    'export iter=%s' % cur_iter
                                 ]
         post_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
         post_ana_task.arguments = [ 'post_analyze.py',                                   
