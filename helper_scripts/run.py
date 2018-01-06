@@ -57,7 +57,7 @@ def write_script(grofile_name,output_grofile_name,grompp_options,ndxfile_options
             echo "part2"
             #date
             wait
-            sleep 20
+            sleep 1
             #ps
             #date
             echo $idx >> run.log
