@@ -130,8 +130,8 @@ def create_workflow(Kconfig):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > $SHARED/iter_%s/tmpha.gro' % cur_iter,
-                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter,
-                                         'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter]
+                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter]
+                                         #'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter
 
         pre_ana_stage.add_tasks(pre_ana_task)
         wf.add_stages(pre_ana_stage)
@@ -163,14 +163,14 @@ def create_workflow(Kconfig):
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
                                     '$SHARED/iter_%s/tmpha.gro > tmpha.gro' % cur_iter]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter]
+                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
+                                     'lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
         if cur_iter > 0:
-          ana_task.link_input_data += ['%s/weight.w > weight.w' % ana_task_ref]
+          ana_task.link_input_data += ['%s/weight.w > weight.w' % post_ana_task_ref]
           ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter]
 
         if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter,
-                                             'plot-scatter-cluster-10d.png > output/iter%s/plot-scatter-cluster-10d.png']
+            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
 
 
         ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
@@ -237,10 +237,10 @@ def create_workflow(Kconfig):
                                              ]
 
         post_ana_task.copy_output_data = ['out.nn > $SHARED/iter_%s/out.nn' % cur_iter,
+                                     'ncopies.nc > $SHARED/iter_%s/out.nn' % cur_iter,
                                      'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                     'plot-scatter-cluster-10d.png > resource://iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
                                      'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter]
-
+                                    # 'plot-scatter-cluster-10d.png > resource://iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
         post_ana_stage.add_tasks(post_ana_task)
