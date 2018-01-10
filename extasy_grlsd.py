@@ -15,8 +15,8 @@ import imp
 import json
 import traceback
 
-
-os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://entk:entk@ds033196.mlab.com:33196/extasy_grlsd'
+os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://eh22:a3Qv*zs0@ds141209.mlab.com:41209/clementigroup'
+#os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://entk:entk@ds033196.mlab.com:33196/extasy_grlsd'
 os.environ['RADICAL_ENTK_VERBOSE'] = 'INFO'
 
 def create_workflow(Kconfig):
@@ -96,7 +96,6 @@ def create_workflow(Kconfig):
 
             if (cur_iter == 0):
                 sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (pre_proc_task_ref, sim_num))
-
             else:
                 sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (post_ana_task_ref, sim_num))
 
@@ -126,11 +125,13 @@ def create_workflow(Kconfig):
                                   ]
 
         pre_ana_task.link_input_data = ['$SHARED/pre_analyze.py > pre_analyze.py']
+        
         for sim_num in range(ENSEMBLE_SIZE):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > $SHARED/iter_%s/tmpha.gro' % cur_iter,
-                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter]
+                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter,
+                                         'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter]
 
         pre_ana_stage.add_tasks(pre_ana_task)
         wf.add_stages(pre_ana_stage)
@@ -162,13 +163,10 @@ def create_workflow(Kconfig):
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
                                     '$SHARED/iter_%s/tmpha.gro > tmpha.gro' % cur_iter]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
-                                     'out.nn > $SHARED/iter_%s/out.nn' % cur_iter]
+                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter]
         if cur_iter > 0:
-            ana_task.link_input_data += ['%s/weight.w > weight.w' % ana_task_ref]
-            ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter,
-                                          'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                          'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter]
+          ana_task.link_input_data += ['%s/weight.w > weight.w' % ana_task_ref]
+          ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter]
 
         if(cur_iter % Kconfig.nsave == 0):
             ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter,
@@ -177,6 +175,7 @@ def create_workflow(Kconfig):
 
         ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
 
+        
         ana_stage.add_tasks(ana_task)
         wf.add_stages(ana_stage)
         # --------------------------------------------------------------------------------------------------------------
@@ -224,16 +223,23 @@ def create_workflow(Kconfig):
                                          '$SHARED/gro.py > gro.py',
                                          '$SHARED/iter_%s/tmp.gro > tmp.gro' % cur_iter,
                                          '$SHARED/iter_%s/tmpha.ev > tmpha.ev' % cur_iter,
+                                         '$SHARED/iter_%s/tmpha.eg > tmpha.eg' % cur_iter,
                                          '$SHARED/iter_%s/out.nn > out.nn' % cur_iter,
                                          '$SHARED/input.gro > input.gro']
 
-        if cur_iter > 0:
-            post_ana_task.link_input_data += ['%s/weight.w > weight_new.w' % ana_task_ref]
+        #if cur_iter > 0:
+        post_ana_task.link_input_data += ['%s/weight.w > weight_new.w' % ana_task_ref]
 
         if(cur_iter % Kconfig.nsave == 0):
             post_ana_task.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
                                              'weight.w > output/iter%s/weight.w' % cur_iter,
-                                             '$SHARED/iter_%s/tmp.gro > output/iter%s/tmp.gro' % (cur_iter,cur_iter) ]
+                                             '$SHARED/iter_%s/tmp.gro > output/iter%s/tmp.gro' % (cur_iter,cur_iter) 
+                                             ]
+
+        post_ana_task.copy_output_data = ['out.nn > $SHARED/iter_%s/out.nn' % cur_iter,
+                                     'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
+                                     'plot-scatter-cluster-10d.png > resource://iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
+                                     'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter]
 
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 

@@ -45,14 +45,20 @@ class SelectionStep(object):
         #evs = evfile.readlines()
         
         evs = np.loadtxt("tmpha.ev")
-        #egs = np.loadtxt("tmpha.eg")
-        npoints = evs.shape[0]
+        scale_time=True
+        if scale_time:
+          egs = np.loadtxt("tmpha.eg")
+        num_points = evs.shape[0]
+        num_evs = evs.shape[1]
         #rescale
-        for i in range(1,10):
-          evs[:,i]=(evs[:,i]-evs[:,i].min())*(2.)/(evs[:,i].max()-evs[:,i].min())
-          #print(i, evs[:,i].max()-evs[:,i].min())
+        for i in range(1,num_evs):
+          if scale_time:
+            evs[:,i]=np.sqrt(-1./np.log(np.abs(egs[i])))*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
+          else:
+            evs[:,i]=2.*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
+            #print(i, evs[:,i].max()-evs[:,i].min())
 
-        cluster_obj=pyemma.coordinates.cluster_kmeans(data = evs[:,1:11])
+        cluster_obj=pyemma.coordinates.cluster_kmeans(data = evs[:,1:])
 
         assigns=cluster_obj.get_output()[0][:,0]
         assigns.shape
@@ -82,7 +88,7 @@ class SelectionStep(object):
         p = inv_values / np.sum(inv_values)
         cluster_picks=np.random.choice(np.arange(assigns.max()+1), p = p, size=n_states)
 
-        ncopiess = np.zeros(npoints, dtype='int')
+        ncopiess = np.zeros(num_points, dtype='int')
         structures_pick=np.zeros(n_states, dtype='int')
         for i, cluster_pick in enumerate(cluster_picks):
           #print i, cluster_pick
