@@ -74,22 +74,15 @@ def create_workflow(Kconfig):
         for sim_num in range(ENSEMBLE_SIZE):
 
             sim_task = Task()
-            sim_task.pre_exec = [   'source /u/sciteam/balasubr/modules/gromacs/build-cpu-serial/bin/GMXRC.bash', 
-                                    'module load bwpy',
-                                    'module load platform-mpi',
-                                    'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
-                                    'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
+            sim_task.pre_exec = [   'export PATH=/u/sciteam/hruska/anaconda3/bin:$PATH',
+                                    'source activate extasy',
                                     'export iter=%s' % cur_iter]
             sim_task.executable = ['python']
             sim_task.cores = 16
-            sim_task.arguments = ['run.py',
-                                  '--mdp', os.path.basename(Kconfig.mdp_file),
-                                  '--top', os.path.basename(Kconfig.top_file),
+            sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
-                                  '--out', 'out.gro']
-            sim_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.mdp_file)),
-                                        '$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.top_file)),
-                                        '$SHARED/run.py > run.py']
+                                  '--out', 'out.gro', '>', 'md.log']
+            sim_task.link_input_data = ['$SHARED/run.py > run_openmm.py']
 
             if Kconfig.ndx_file is not None:
                 sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
@@ -114,17 +107,13 @@ def create_workflow(Kconfig):
 
         pre_ana_stage = Stage()
         pre_ana_task = Task()
-        pre_ana_task.pre_exec = [   'source /u/sciteam/balasubr/modules/gromacs/build-cpu-serial/bin/GMXRC.bash',
-                                    'module load bwpy',
+        pre_ana_task.pre_exec = [   'export PATH=/u/sciteam/hruska/anaconda3/bin:$PATH',
+                                    'source activate extasy',
                                     'export iter=%s' % cur_iter]
         pre_ana_task.executable = ['python']
-        pre_ana_task.arguments = ['pre_analyze.py',
-                                  Kconfig.num_CUs,
-                                  'tmp.gro',
-                                  '.'
-                                  ]
+        pre_ana_task.arguments = ['pre_analyze_openmm.py']
 
-        pre_ana_task.link_input_data = ['$SHARED/pre_analyze.py > pre_analyze.py']
+        pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
         
         for sim_num in range(ENSEMBLE_SIZE):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
@@ -299,7 +288,9 @@ if __name__ == '__main__':
                             '%s/spliter.py' % Kconfig.helper_scripts,
                             '%s/gro.py' % Kconfig.helper_scripts,
                             '%s/run.py' % Kconfig.helper_scripts,
+                            '%s/run_openmm.py' % Kconfig.helper_scripts,
                             '%s/pre_analyze.py' % Kconfig.helper_scripts,
+                            '%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
                             '%s/post_analyze.py' % Kconfig.helper_scripts,
                             '%s/selection.py' % Kconfig.helper_scripts,
                             '%s/selection-cluster.py' % Kconfig.helper_scripts,
