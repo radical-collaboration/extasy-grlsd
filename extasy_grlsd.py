@@ -74,15 +74,16 @@ def create_workflow(Kconfig):
         for sim_num in range(ENSEMBLE_SIZE):
 
             sim_task = Task()
-            sim_task.pre_exec = [   'export PATH=/u/sciteam/hruska/anaconda3/bin:$PATH',
-                                    'source activate extasy',
+            sim_task.pre_exec = [   'module load bwpy', 
+                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
+                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
-            sim_task.executable = ['python']
+            sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
             sim_task.cores = 16
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']
-            sim_task.link_input_data = ['$SHARED/run.py > run_openmm.py']
+            sim_task.link_input_data = ['$SHARED/run_openmm.py > run_openmm.py']
 
             if Kconfig.ndx_file is not None:
                 sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
@@ -107,10 +108,11 @@ def create_workflow(Kconfig):
 
         pre_ana_stage = Stage()
         pre_ana_task = Task()
-        pre_ana_task.pre_exec = [   'export PATH=/u/sciteam/hruska/anaconda3/bin:$PATH',
-                                    'source activate extasy',
+        pre_ana_task.pre_exec = [    'module load bwpy', 
+                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
+                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
-        pre_ana_task.executable = ['python']
+        pre_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
         pre_ana_task.arguments = ['pre_analyze_openmm.py']
 
         pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
@@ -141,7 +143,7 @@ def create_workflow(Kconfig):
                                 'source /u/sciteam/balasubr/ve-extasy/bin/activate',
                                 'export iter=%s' % cur_iter
                                 ]
-        ana_task.executable = ['lsdmap']
+        ana_task.executable = ['lsdmap'] #/u/sciteam/hruska/local/bin/lsdmap
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
                               '-c', 'tmpha.gro',
                               '-n', 'out.nn',
@@ -184,9 +186,9 @@ def create_workflow(Kconfig):
         post_ana_stage = Stage()
         post_ana_task = Task()
         post_ana_task._name      = 'post_ana_task'
-        post_ana_task.pre_exec = [  'module load bwpy',
-                                    'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
-                                    'export PATH=/u/sciteam/hruska/local/bin:$PATH',
+        post_ana_task.pre_exec = [   'module load bwpy', 
+                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
+                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter
                                 ]
         post_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']

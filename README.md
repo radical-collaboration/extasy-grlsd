@@ -83,6 +83,7 @@ rabbitmq-server &
 python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig gromacslsdmap.wcfg
 ```
 
+The behavior of the RabbitMQ server is visible under http://localhost:15672/#/ with login guest and password guest
 
 ## Note
 

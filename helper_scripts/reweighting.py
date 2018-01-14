@@ -18,7 +18,7 @@ class ReweightingStep(object):
     def initialize(self, args):
 
         # read structure file
-        struct_file = reader.open(args.struct_file, velocities=True)
+        struct_file = reader.open(args.struct_file, velocities=False)#, velocities=True)
         self.struct_filename = struct_file.filename
         self.coords = struct_file.readlines()
 

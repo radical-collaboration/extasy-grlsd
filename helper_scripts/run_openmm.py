@@ -1,3 +1,7 @@
+from simtk.unit import *
+from simtk.openmm import * #LangevinIntegrator, Simulation
+from simtk.openmm.app import * 
+from sys import stdout
 import os
 import mdtraj
 import mdtraj.reporters
@@ -5,22 +9,23 @@ import mdtraj.reporters
 from datetime import datetime
 import argparse
 
-from simtk.openmm.app import * 
-from simtk.openmm import * 
-from simtk.unit import *
-from sys import stdout
+
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gro',dest='grofile_name',required=True,type=str)
 parser.add_argument('--out',dest='output_grofile_name',required=True,type=str)
 args = parser.parse_args()
+#grofile_name='start2.gro
 
-file=mdtraj.load(grofile_name)
+file=mdtraj.load(args.grofile_name)
+file.save_pdb('tmp_in.pdb')
+pdb=mdtraj.load('tmp_in.pdb')
+#pdb=mdtraj.load(grofile_name)
 
 print("num of structures:",len(pdb))
 for i in range(len(pdb)):
-	topology = pdb.topology.to_openmm()
+	topology = pdb[i].topology.to_openmm()
 	#implicit forcefield
 	forcefield = ForceField('amber99sbildn.xml', 'amber99_obc.xml')
 	temp=300
@@ -54,11 +59,11 @@ for i in range(len(pdb)):
 	vel = state.getVelocities(asNumpy=True)
 	pos = state.getPositions(asNumpy=True)
 	print(state.getPotentialEnergy(), state.getKineticEnergy())
-	PDBFile.writeFile(simulation.topology, pos, open('Ala12_output_concat.pdb', 'a'))
+	PDBFile.writeFile(simulation.topology, pos, open('tmp_out.pdb', 'a'))
 
 
-file=mdtraj.load('Ala12_output_concat.pdb')
-file.save_gro(output_grofile_name)
+file=mdtraj.load('tmp_out.pdb')
+file.save_gro(args.output_grofile_name)
 
 
 

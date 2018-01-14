@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     curdir = os.path.dirname(os.path.abspath(__file__))
 
-    print 'Prepare grofiles..'
+    print 'Prepare grofiles for splitting'
 
     grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/' + grofile_name)
 
@@ -52,3 +52,5 @@ if __name__ == '__main__':
                         print >> start_grofile, line
                     else:
                         break
+
+    print 'Finished splitting'
