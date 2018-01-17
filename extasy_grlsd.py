@@ -38,26 +38,26 @@ def create_workflow(Kconfig):
             inputfile = file to be split
             numCUs    = number of simulation instances/ number of smaller files
     '''
-    pre_proc_stage = Stage()
-    pre_proc_task = Task()
-    pre_proc_task.pre_exec = ['module load bwpy',
-                              'export iter=-1']
-    pre_proc_task.executable = ['python']
-    pre_proc_task.arguments = [ 'spliter.py',
-                                Kconfig.num_CUs,
-                                os.path.basename(Kconfig.md_input_file)
-                            ]
-    pre_proc_task.copy_input_data = ['$SHARED/%s' % os.path.basename(Kconfig.md_input_file),
-                                     '$SHARED/spliter.py',
-                                     '$SHARED/gro.py'
-                                     ]
-    pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
-
-    pre_proc_stage.add_tasks(pre_proc_task)
-    wf.add_stages(pre_proc_stage)
-    # ------------------------------------------------------------------------------------------------------------------
-
     cur_iter = 0
+
+    if cur_iter==0:
+      pre_proc_stage = Stage()
+      pre_proc_task = Task()
+      pre_proc_task.pre_exec = ['module load bwpy',
+                                'export iter=-1']
+      pre_proc_task.executable = ['python']
+      pre_proc_task.arguments = [ 'spliter.py',
+                                  Kconfig.num_CUs,
+                                  os.path.basename(Kconfig.md_input_file)
+                              ]
+      pre_proc_task.copy_input_data = ['$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
+                                       '$SHARED/spliter.py > spliter.py',
+                                       '$SHARED/gro.py > gro.py']
+      pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
+      pre_proc_stage.add_tasks(pre_proc_task)
+      wf.add_stages(pre_proc_stage)
+      # ------------------------------------------------------------------------------------------------------------------
+
     while(cur_iter < TOTAL_ITERS):
 
         # --------------------------------------------------------------------------------------------------------------
@@ -121,7 +121,9 @@ def create_workflow(Kconfig):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > $SHARED/iter_%s/tmpha.gro' % cur_iter,
-                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter]
+                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter,
+                                         'tmpha.gro > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.gro' % cur_iter,
+                                         'tmp.gro > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmp.gro' % cur_iter]
                                          #'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter
 
         pre_ana_stage.add_tasks(pre_ana_task)
@@ -155,10 +157,15 @@ def create_workflow(Kconfig):
                                     '$SHARED/iter_%s/tmpha.gro > tmpha.gro' % cur_iter]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
                                      'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
-                                     'lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
+                                     'lsdmap.log > output/iter%s/lsdmap.log'%cur_iter,
+                                     'tmpha.ev > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.ev' % cur_iter,
+                                     'tmpha.eg > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.eg' % cur_iter,
+                                     'lsdmap.log > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/lsdmap.log' % cur_iter,
+                                     ]
         if cur_iter > 0:
           ana_task.link_input_data += ['%s/weight.w > weight.w' % post_ana_task_ref]
-          ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter]
+          ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter,
+                                        'weight.w > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/weight.w' % cur_iter]
 
         if(cur_iter % Kconfig.nsave == 0):
             ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
@@ -204,7 +211,9 @@ def create_workflow(Kconfig):
                                     Kconfig.max_dead_neighbors,
                                     'input.gro',
                                     cur_iter,
-                                    Kconfig.num_CUs]
+                                    Kconfig.num_CUs,
+                                    'weight_out.w',
+                                    'tmpha.eg']
 
         post_ana_task.link_input_data = ['$SHARED/post_analyze.py > post_analyze.py',
                                          '$SHARED/selection.py > selection.py',
@@ -230,7 +239,9 @@ def create_workflow(Kconfig):
         post_ana_task.copy_output_data = ['out.nn > $SHARED/iter_%s/out.nn' % cur_iter,
                                      'ncopies.nc > $SHARED/iter_%s/out.nn' % cur_iter,
                                      'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                     'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter]
+                                     'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter,
+                                     'plot-scatter-cluster-10d.png > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
+                                     'ncopies.nc > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/ncopies.nc' % cur_iter]
                                     # 'plot-scatter-cluster-10d.png > resource://iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 

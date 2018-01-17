@@ -34,8 +34,10 @@ if __name__ =='__main__':
     md_input_file = sys.argv[10]
     cycle = int(sys.argv[11])
     numCUs = int(sys.argv[12])
+    wfile_out = str(sys.argv[13])
+    egfile = sys.argv[14]
 
-    os.system('OMP_NUM_THREADS=1 /sw/bw/bwpy/0.3.0/python-single/usr/bin/python selection-cluster.py %s -s %s -o %s' %(num_runs,evfile,num_clone_files))
+    os.system('OMP_NUM_THREADS=1 /sw/bw/bwpy/0.3.0/python-single/usr/bin/python selection-cluster.py %s -ev %s -eg %s -o %s' %(num_runs,evfile,egfile,num_clone_files))
     #Update Boltzman weights
 
     try:
@@ -48,7 +50,7 @@ if __name__ =='__main__':
     except:
         pass
 
-    os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python reweighting.py -c %s -n %s -s %s -w %s -o %s --max_alive_neighbors=%s --max_dead_neighbors=%s' % (md_output_file,nearest_neighbor_file,num_clone_files,w_file,outgrofile_name,max_alive_neighbors,max_dead_neighbors))
+    os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python reweighting.py -c %s -n %s -s %s -w %s -wout %s -o %s --max_alive_neighbors=%s --max_dead_neighbors=%s' % (md_output_file,nearest_neighbor_file,num_clone_files,w_file, wfile_out, outgrofile_name,max_alive_neighbors,max_dead_neighbors))
 
     os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python spliter.py {0} {1}'.format(numCUs,outgrofile_name))
 

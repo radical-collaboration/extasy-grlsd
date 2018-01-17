@@ -46,7 +46,7 @@ for i in range(len(pdb)):
 	#simulation.reporters.append(PDBReporter('output.pdb', 1000)) 
 	simulation.reporters.append(StateDataReporter(stdout, 1000, step=True,
 	potentialEnergy=True, temperature=True)) 
-	steps=10000
+	steps=20000 #10000=2sec each, 100000=20sec
 	start=datetime.now()
 	simulation.step(steps)
 	end = datetime.now()

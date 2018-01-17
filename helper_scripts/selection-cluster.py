@@ -22,10 +22,16 @@ class SelectionStep(object):
         parser.add_argument('npoints', metavar='n', type=int, help='number of configurations to be selected')
 
         # required options
-        parser.add_argument("-s",
+        parser.add_argument("-eg",
+           type=str,
+           dest="egfile",
+           required=True,
+           help="File containing the eigenvalues: eg")
+
+        parser.add_argument("-ev",
            type=str,
            dest="evfile",
-           required=True,
+           required=False,
            help="File containing the eigenvectors (DC's) of each configuration (input): ev")
 
         parser.add_argument("-o",
@@ -44,16 +50,19 @@ class SelectionStep(object):
         #evfile = reader.open(args.evfile)
         #evs = evfile.readlines()
         
-        evs = np.loadtxt("tmpha.ev")
-        scale_time=True
-        if scale_time:
-          egs = np.loadtxt("tmpha.eg")
+        evs = np.loadtxt(args.evfile)#"tmpha.ev")
+        scale_time=False
+        scale_eg=True
+        if scale_time or scale_eg:
+          egs = np.loadtxt(args.egfile)#"tmpha.eg")
         num_points = evs.shape[0]
         num_evs = evs.shape[1]
         #rescale
-        for i in range(1,num_evs):
+        for i in range(1,min(5,num_evs)):
           if scale_time:
             evs[:,i]=np.sqrt(-1./np.log(np.abs(egs[i])))*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
+          elif scale_eg:
+            evs[:,i]=np.abs(egs[i])*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
           else:
             evs[:,i]=2.*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
             #print(i, evs[:,i].max()-evs[:,i].min())

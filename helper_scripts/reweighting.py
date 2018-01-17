@@ -87,6 +87,13 @@ class ReweightingStep(object):
             default='weight.w',
             help='File containing the weights of every point in a row (input/output, opt.): w')
 
+        parser.add_argument("-wout",
+            type=str,
+            dest="wfileout",
+            required=False,
+            default='weight_out.w',
+            help='File containing the weights of every point in a row (input/output, opt.): wout')
+
         parser.add_argument("--max_alive_neighbors",
            type=int,
            dest="max_alive_neighbors",
@@ -124,7 +131,7 @@ class ReweightingStep(object):
 
         # save wfile
         wfile_writer = writer.open('.w')
-        wfile_writer.write(self.new_weights, args.wfile)
+        wfile_writer.write(self.new_weights, args.wfileout)
 
     def run(self):
 

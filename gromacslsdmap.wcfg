@@ -4,9 +4,9 @@ analyzer              = 'LSDMap'            # Analyzer to be loaded
 
 #--------------------------General--------------------------------
 num_CUs              = 16     #160             # Number of tasks or Compute Units
-num_iterations       = 3                    # Number of iterations of Simulation-Analysis
+num_iterations       = 5                    # Number of iterations of Simulation-Analysis
 start_iter           = 0                    # Iteration number with which to start
-nsave                = 2                    # # Iterations after which output is transfered to local machine
+nsave                = 1                    # # Iterations after which output is transfered to local machine
 
 #--------------------------Simulation--------------------------------
 md_input_file        = './inp_files/input.gro'        # Entire path to the MD Input file - Do not use $HOME or the likes
