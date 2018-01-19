@@ -22,7 +22,8 @@ file=mdtraj.load(args.grofile_name)
 file.save_pdb('tmp_in.pdb')
 pdb=mdtraj.load('tmp_in.pdb')
 #pdb=mdtraj.load(grofile_name)
-
+#save_traj=False
+save_traj=True
 print("num of structures:",len(pdb))
 for i in range(len(pdb)):
 	topology = pdb[i].topology.to_openmm()
@@ -46,6 +47,8 @@ for i in range(len(pdb)):
 	#simulation.reporters.append(PDBReporter('output.pdb', 1000)) 
 	simulation.reporters.append(StateDataReporter(stdout, 1000, step=True,
 	potentialEnergy=True, temperature=True)) 
+	if save_traj:
+	  simulation.reporters.append(DCDReporter('output.dcd', 10)) 
 	steps=20000 #10000=2sec each, 100000=20sec
 	start=datetime.now()
 	simulation.step(steps)
