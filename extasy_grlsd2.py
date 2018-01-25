@@ -288,7 +288,7 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('--RPconfig', help='link to Radical Pilot related configurations file')
         parser.add_argument('--Kconfig', help='link to Kernel configurations file')
-
+        #parser.add_argument('--port', dest="port", help='port for RabbitMQ server', default=5672, type=int)
         args = parser.parse_args()
 
         if args.RPconfig is None:
@@ -338,8 +338,8 @@ if __name__ == '__main__':
         if Kconfig.ndx_file is not None:
             rman.shared_data.append(Kconfig.ndx_file)
 
-        # Create Application Manager
-        appman = AppManager()
+        # Create Application Manager, only one extasy script on one rabbit-mq server now
+        appman = AppManager()#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager

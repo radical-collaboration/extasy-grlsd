@@ -67,7 +67,7 @@ class SelectionStep(object):
             evs[:,i]=2.*((evs[:,i]-evs[:,i].min())/(evs[:,i].max()-evs[:,i].min())-0.5)
             #print(i, evs[:,i].max()-evs[:,i].min())
 
-        cluster_obj=pyemma.coordinates.cluster_kmeans(data = evs[:,1:])
+        cluster_obj=pyemma.coordinates.cluster_kmeans(data = evs[:,1:])# changing max_iter fails
 
         assigns=cluster_obj.get_output()[0][:,0]
         assigns.shape
