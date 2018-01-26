@@ -314,7 +314,7 @@ if __name__ == '__main__':
             rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager
-        appman = AppManager(port=5673)
+        appman = AppManager()#port=5673)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager

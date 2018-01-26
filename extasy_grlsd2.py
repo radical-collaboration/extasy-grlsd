@@ -55,7 +55,7 @@ def create_workflow(Kconfig):
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py',
                                   Kconfig.num_CUs,
-                                  os.path.basename(Kconfig.md_input_file)
+                                  'input.gro'
                               ]
       pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
                                        '$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
@@ -75,7 +75,7 @@ def create_workflow(Kconfig):
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py',
                                   Kconfig.num_CUs,
-                                  os.path.basename(Kconfig.md_input_file)
+                                  'input.gro'
                               ]
       pre_proc_task.copy_input_data = ['%s/iter_%s/out.gro > input.gro'  % (combined_path,cur_iter-1),
                                        '$SHARED/spliter.py > spliter.py',
@@ -109,7 +109,7 @@ def create_workflow(Kconfig):
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']
-            sim_task.link_input_data = ['$SHARED/run_openmm.py > run_openmm.py']
+            sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
 
             #if Kconfig.ndx_file is not None:
             #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
@@ -257,7 +257,9 @@ def create_workflow(Kconfig):
 
         if(cur_iter % Kconfig.nsave == 0):
             post_ana_task.download_output_data = ['out.gro > output/iter_%s/out.gro' % cur_iter,
-                                             'weight.w > output/iter_%s/weight.w' % cur_iter,
+                                             'weight_out.w > output/iter_%s/weight_out.w' % cur_iter,
+                                             'plot-scatter-cluster-10d.png > output/iter_%s/plot-scatter-cluster-10d.png' % (cur_iter),
+                                             'ncopies.nc > output/iter_%s/ncopies.nc' % (cur_iter),
                                              '%s/iter_%s/tmp.gro > output/iter_%s/tmp.gro' % (combined_path,cur_iter,cur_iter) 
                                              ]
 
@@ -320,13 +322,12 @@ if __name__ == '__main__':
         rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
         rman.shared_data = [Kconfig.md_input_file,
+                            Kconfig.md_run_file,
                             Kconfig.lsdm_config_file,
-                            Kconfig.top_file,
-                            Kconfig.mdp_file,
                             '%s/spliter.py' % Kconfig.helper_scripts,
                             '%s/gro.py' % Kconfig.helper_scripts,
                             #'%s/run.py' % Kconfig.helper_scripts,
-                            '%s/run_openmm.py' % Kconfig.helper_scripts,
+                            #'%s/run_openmm.py' % Kconfig.helper_scripts,
                             #'%s/pre_analyze.py' % Kconfig.helper_scripts,
                             '%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
                             '%s/post_analyze.py' % Kconfig.helper_scripts,
@@ -335,8 +336,8 @@ if __name__ == '__main__':
                             '%s/reweighting.py' % Kconfig.helper_scripts
                             ]
 
-        if Kconfig.ndx_file is not None:
-            rman.shared_data.append(Kconfig.ndx_file)
+        #if Kconfig.ndx_file is not None:
+        #    rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager, only one extasy script on one rabbit-mq server now
         appman = AppManager()#port=args.port)
