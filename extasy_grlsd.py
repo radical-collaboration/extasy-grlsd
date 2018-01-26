@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-__author__ = 'Vivek <vivek.balasubramanian@rutgers.edu>'
-__copyright__ = 'Copyright 2017, http://radical.rutgers.edu'
+__author__ = 'Vivek <vivek.balasubramanian@rutgers.edu> Eugen <eh22@rice.edu>'
+__copyright__ = 'Copyright 2018, http://radical.rutgers.edu,  http://clementiresearch.rice.edu'
 __license__ = 'MIT'
-__use_case_name__ = 'Gromacs + LSDMap simulation-analysis using EnTK 0.6'
+__use_case_name__ = 'Gromacs + LSDMap simulation-analysis using EnTK'
 
 
 from radical.entk import Pipeline, Stage, Task, AppManager, ResourceManager
@@ -38,7 +38,14 @@ def create_workflow(Kconfig):
             inputfile = file to be split
             numCUs    = number of simulation instances/ number of smaller files
     '''
-    cur_iter = 0
+    cur_iter = int(Kconfig.start_iter)#0
+    #assumed of iteration non zero that files are in combined_path
+    combined_path='/u/sciteam/hruska/scratch/extasy-grlsd'
+    if cur_iter==0:
+    	restart_iter=0
+    else:
+    	restart_iter=cur_iter
+
 
     if cur_iter==0:
       pre_proc_stage = Stage()
@@ -48,16 +55,35 @@ def create_workflow(Kconfig):
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py',
                                   Kconfig.num_CUs,
-                                  os.path.basename(Kconfig.md_input_file)
+                                  'input.gro'
                               ]
-      pre_proc_task.copy_input_data = ['$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
+      pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
+                                       '$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
+                                       '$SHARED/spliter.py > spliter.py',
+                                       '$SHARED/gro.py > gro.py']
+
+                                       
+      pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
+      pre_proc_stage.add_tasks(pre_proc_task)
+      wf.add_stages(pre_proc_stage)
+      # ------------------------------------------------------------------------------------------------------------------
+    else:
+      pre_proc_stage = Stage()
+      pre_proc_task = Task()
+      pre_proc_task.pre_exec = ['module load bwpy',
+                                'export iter=-1']
+      pre_proc_task.executable = ['python']
+      pre_proc_task.arguments = [ 'spliter.py',
+                                  Kconfig.num_CUs,
+                                  'input.gro'
+                              ]
+      pre_proc_task.copy_input_data = ['%s/iter_%s/out.gro > input.gro'  % (combined_path,cur_iter-1),
                                        '$SHARED/spliter.py > spliter.py',
                                        '$SHARED/gro.py > gro.py']
       pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
       pre_proc_stage.add_tasks(pre_proc_task)
       wf.add_stages(pre_proc_stage)
-      # ------------------------------------------------------------------------------------------------------------------
-
+    
     while(cur_iter < TOTAL_ITERS):
 
         # --------------------------------------------------------------------------------------------------------------
@@ -83,15 +109,17 @@ def create_workflow(Kconfig):
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']
-            sim_task.link_input_data = ['$SHARED/run_openmm.py > run_openmm.py']
+            sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
 
-            if Kconfig.ndx_file is not None:
-                sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
-
-            if (cur_iter == 0):
-                sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (pre_proc_task_ref, sim_num))
+            #if Kconfig.ndx_file is not None:
+            #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
+            if restart_iter==cur_iter:
+            	sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (pre_proc_task_ref, sim_num))
             else:
-                sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (post_ana_task_ref, sim_num))
+              sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (post_ana_task_ref, sim_num))
+
+            sim_task.copy_output_data = ['output.dcd > %s/iter_%s/output_%s.dcd' % (combined_path,cur_iter, sim_num)]
+
 
             sim_task_ref.append('$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, sim_stage.uid, sim_task.uid))
             sim_stage.add_tasks(sim_task)
@@ -120,10 +148,8 @@ def create_workflow(Kconfig):
         for sim_num in range(ENSEMBLE_SIZE):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
-        pre_ana_task.copy_output_data = ['tmpha.gro > $SHARED/iter_%s/tmpha.gro' % cur_iter,
-                                         'tmp.gro > $SHARED/iter_%s/tmp.gro' % cur_iter,
-                                         'tmpha.gro > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.gro' % cur_iter,
-                                         'tmp.gro > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmp.gro' % cur_iter]
+        pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
+                                         'tmp.gro > %s/iter_%s/tmp.gro' % (combined_path,cur_iter)]
                                          #'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter
 
         pre_ana_stage.add_tasks(pre_ana_task)
@@ -154,21 +180,22 @@ def create_workflow(Kconfig):
 
         ana_task.cores = 1
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
-                                    '$SHARED/iter_%s/tmpha.gro > tmpha.gro' % cur_iter]
+                                    '%s/iter_%s/tmpha.gro > tmpha.gro' % (combined_path,cur_iter)]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
                                      'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
-                                     'lsdmap.log > output/iter%s/lsdmap.log'%cur_iter,
-                                     'tmpha.ev > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/tmpha.eg' % cur_iter,
-                                     'lsdmap.log > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/lsdmap.log' % cur_iter,
+                                     'lsdmap.log > output/iter_%s/lsdmap.log'%cur_iter,
+                                     'tmpha.ev > %s/iter_%s/tmpha.ev' % (combined_path,cur_iter),
+                                     'tmpha.eps > %s/iter_%s/tmpha.eps' % (combined_path,cur_iter),
+                                     'tmpha.eg > %s/iter_%s/tmpha.eg' % (combined_path,cur_iter),
+                                     'out.nn > %s/iter_%s/out.nn' % (combined_path,cur_iter),
+                                     'lsdmap.log > %s/iter_%s/lsdmap.log' % (combined_path,cur_iter)
                                      ]
         if cur_iter > 0:
-          ana_task.link_input_data += ['%s/weight.w > weight.w' % post_ana_task_ref]
-          ana_task.copy_output_data += ['weight.w > $SHARED/iter_%s/weight.w' % cur_iter,
-                                        'weight.w > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/weight.w' % cur_iter]
+          ana_task.link_input_data += ['%s/iter_%s/weight_out.w > weight.w' % (combined_path,cur_iter-1)]
+
 
         if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter%s/lsdmap.log'%cur_iter]
+            ana_task.download_output_data = ['lsdmap.log > output/iter_%s/lsdmap.log' % cur_iter]
 
 
         ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
@@ -221,28 +248,27 @@ def create_workflow(Kconfig):
                                          '$SHARED/reweighting.py > reweighting.py',
                                          '$SHARED/spliter.py > spliter.py',
                                          '$SHARED/gro.py > gro.py',
-                                         '$SHARED/iter_%s/tmp.gro > tmp.gro' % cur_iter,
-                                         '$SHARED/iter_%s/tmpha.ev > tmpha.ev' % cur_iter,
-                                         '$SHARED/iter_%s/tmpha.eg > tmpha.eg' % cur_iter,
-                                         '$SHARED/iter_%s/out.nn > out.nn' % cur_iter,
-                                         '$SHARED/input.gro > input.gro']
+                                         '%s/iter_%s/weight_out.w > weight.w' % (combined_path,cur_iter-1),
+                                         '%s/iter_%s/tmp.gro > tmp.gro' % (combined_path,cur_iter),
+                                         '%s/iter_%s/tmpha.ev > tmpha.ev' % (combined_path,cur_iter),
+                                         '%s/iter_%s/tmpha.eg > tmpha.eg' % (combined_path,cur_iter),
+                                         '%s/iter_%s/out.nn > out.nn' % (combined_path,cur_iter)]
 
-        #if cur_iter > 0:
-        post_ana_task.link_input_data += ['%s/weight.w > weight_new.w' % ana_task_ref]
 
         if(cur_iter % Kconfig.nsave == 0):
-            post_ana_task.download_output_data = ['out.gro > output/iter%s/out.gro' % cur_iter,
-                                             'weight.w > output/iter%s/weight.w' % cur_iter,
-                                             '$SHARED/iter_%s/tmp.gro > output/iter%s/tmp.gro' % (cur_iter,cur_iter) 
+            post_ana_task.download_output_data = ['out.gro > output/iter_%s/out.gro' % cur_iter,
+                                             'weight_out.w > output/iter_%s/weight_out.w' % cur_iter,
+                                             'plot-scatter-cluster-10d.png > output/iter_%s/plot-scatter-cluster-10d.png' % (cur_iter),
+                                             'ncopies.nc > output/iter_%s/ncopies.nc' % (cur_iter),
+                                             '%s/iter_%s/tmp.gro > output/iter_%s/tmp.gro' % (combined_path,cur_iter,cur_iter) 
                                              ]
 
-        post_ana_task.copy_output_data = ['out.nn > $SHARED/iter_%s/out.nn' % cur_iter,
-                                     'ncopies.nc > $SHARED/iter_%s/out.nn' % cur_iter,
-                                     'plot-scatter-cluster-10d.png > $SHARED/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                     'ncopies.nc > $SHARED/iter_%s/ncopies.nc' % cur_iter,
-                                     'plot-scatter-cluster-10d.png > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
-                                     'ncopies.nc > /u/sciteam/hruska/scratch/extasy-grlsd/iter_%s/ncopies.nc' % cur_iter]
-                                    # 'plot-scatter-cluster-10d.png > resource://iter_%s/plot-scatter-cluster-10d.png' % cur_iter,
+        post_ana_task.copy_output_data = ['ncopies.nc > %s/iter_%s/ncopies.nc' % (combined_path,cur_iter),
+                                     'weight_out.w > %s/iter_%s/weight_out.w' % (combined_path,cur_iter),
+                                     'out.gro > %s/iter_%s/out.gro' % (combined_path,cur_iter),
+                                     'plot-scatter-cluster-10d.png > %s/iter_%s/plot-scatter-cluster-10d.png' % (combined_path,cur_iter),
+                                     'plot-scatter-cluster-10d-counts.png > %s/iter_%s/plot-scatter-cluster-10d-counts.png' % (combined_path,cur_iter),
+                                     'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter)]
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
         post_ana_stage.add_tasks(post_ana_task)
@@ -250,6 +276,7 @@ def create_workflow(Kconfig):
         # --------------------------------------------------------------------------------------------------------------
 
         cur_iter += 1
+        Kconfig.start_iter=str(cur_iter)
 
     return wf
 
@@ -263,7 +290,7 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('--RPconfig', help='link to Radical Pilot related configurations file')
         parser.add_argument('--Kconfig', help='link to Kernel configurations file')
-
+        #parser.add_argument('--port', dest="port", help='port for RabbitMQ server', default=5672, type=int)
         args = parser.parse_args()
 
         if args.RPconfig is None:
@@ -295,26 +322,25 @@ if __name__ == '__main__':
         rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
         rman.shared_data = [Kconfig.md_input_file,
+                            Kconfig.md_run_file,
                             Kconfig.lsdm_config_file,
-                            Kconfig.top_file,
-                            Kconfig.mdp_file,
                             '%s/spliter.py' % Kconfig.helper_scripts,
                             '%s/gro.py' % Kconfig.helper_scripts,
-                            '%s/run.py' % Kconfig.helper_scripts,
-                            '%s/run_openmm.py' % Kconfig.helper_scripts,
-                            '%s/pre_analyze.py' % Kconfig.helper_scripts,
+                            #'%s/run.py' % Kconfig.helper_scripts,
+                            #'%s/run_openmm.py' % Kconfig.helper_scripts,
+                            #'%s/pre_analyze.py' % Kconfig.helper_scripts,
                             '%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
                             '%s/post_analyze.py' % Kconfig.helper_scripts,
-                            '%s/selection.py' % Kconfig.helper_scripts,
+                            #'%s/selection.py' % Kconfig.helper_scripts,
                             '%s/selection-cluster.py' % Kconfig.helper_scripts,
                             '%s/reweighting.py' % Kconfig.helper_scripts
                             ]
 
-        if Kconfig.ndx_file is not None:
-            rman.shared_data.append(Kconfig.ndx_file)
+        #if Kconfig.ndx_file is not None:
+        #    rman.shared_data.append(Kconfig.ndx_file)
 
-        # Create Application Manager
-        appman = AppManager()#port=5673)
+        # Create Application Manager, only one extasy script on one rabbit-mq server now
+        appman = AppManager()#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager

@@ -1,24 +1,28 @@
 # ExTASY (Gromacs, LSDMap)
- 
 
-## Requirements
+## Installation
 
-* Gromacs and lsdmap to be installed on Blue Waters (currently installed
-and made public from Vivek's account)
+* no need to install anything on bluewaters, uses a python installation by us
 
-## EnTK, Radical Pilot Installation
+## Local python installation
 
+In an conda python2.7 installation:
 ```
+conda install -c conda-forge rabbitmq-server tmux pip
 pip install radical.pilot
-git clone https://github.com/radical-collaboration/extasy-grlsd.git
 git clone https://github.com/radical-cybertools/radical.entk.git
 cd radical.entk
 git checkout devel
 pip install .
-apt-get install rabbitmq-server
+
+git clone https://github.com/radical-cybertools/radical.analytics
+cd radical.analytics/
+git checkout devel
+pip install .
 
 ```
-* Note: For the current version, you will have to install RabbitMQ. 
+### Alternative Docker installation
+
 [This link](http://radicalentk-06.readthedocs.io/en/arch-v0.6/install.html) provides two methods in which
 you can install RabbitMQ.
 
@@ -30,8 +34,8 @@ Example docker commands to run rabbitmq command
 ```
 sudo docker run -d --name rabbit-1  -P rabbitmq:3
 ```
-* Note: that if you will run rabbitmq you will need to make a different name for each rabbitmq-server 
 
+* Note: that if you will run rabbitmq you will need to make a different name for each rabbitmq-server 
 ## Setting up access to HPCs
 
 Currently, all packages and permissions are setup for Blue Waters.
@@ -43,6 +47,10 @@ Please note that this has been tested only for xenial and trusty (for trusty,
 simple replace 'xenial' with 'trusty' in all commands). Even then, there might 
 be some additional steps to setup gsissh correctly for your system. Happy to 
 help!
+This should work without typing any password:
+```
+gsissh username@bw.ncsa.illinois.edu
+```
 
 
 ## Setup environment
@@ -54,38 +62,65 @@ git clone git@github.com:radical-collaboration/extasy-grlsd.git
 cd extasy-grlsd
 ```
 
-Next, you need to set a few environment variables:
+Next, you need to set a few environment variables, you can replace the RADICAL_PILOT_DBURL with your own mongoDB on mlab:
 ```
 export RADICAL_ENTK_VERBOSE=info
-export RADICAL_PILOT_DBURL="mongo db url"
 export RP_ENABLE_OLD_DEFINES=True
-export GLOBUS_LOCATION=/usr
-```
-For profiling:
-```
+export GLOBUS_LOCATION='/usr/' #assuming gsissh is at /usr/bin/gsissh
 export RADICAL_ENTK_PROFILE=True
 export RADICAL_PILOT_PROFILE=True
+export SAGA_PTY_SSH_TIMEOUT=300
+export RADICAL_PILOT_DBURL='mongodb://eh22:a3Qv*zs0@ds141209.mlab.com:41209/clementigroup'
+```
+
+Start the rabbitmq server
+
+```
+rabbitmq-server &
+```
+
+The behavior of the RabbitMQ server is visible under http://localhost:15672/#/ with login guest and password guest. If you need to restart the rabbitmq server type:
+```
+rabbitmqctl stop
+rabbitmq-server &
 ```
 
 ## Executing the script
 
-Setup the walltime, allocation and cores you require in resource_config.rcfg.
+Setup the walltime, allocation and cores you require in resource_config.rcfg and all settings in the used settings_*.wcfg.
 
-
-The ```extasy_grlsd.py``` script contains the information about the application 
-execution workflow and the associated data movement. Please take a look at all 
-the comments to understand the various sections.
-
-Execution command: 
+Execution command for Ala2 "Alanine dipeptide", for longer simulations best to run inside tmux on an machine which can run undisturbed for long times:
 
 ```
-rabbitmq-server &
-python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig gromacslsdmap.wcfg
+python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig settings_ala2.wcfg
 ```
 
-The behavior of the RabbitMQ server is visible under http://localhost:15672/#/ with login guest and password guest
+Execution command for Ala12 "Alanine12": 
 
-## Note
+```
+python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig settings_ala12.wcfg
+```
 
-* Hopefully not, but there might be lingering permission issues which will get 
-detected once other users start running the code.
+
+##Your own system
+The MD simulation is in openmm, you have to inp_files:
+* the gromacs structure
+* a copy of run-openmm-ala12.py with any changes for you system (number of steps, forcefield,...)
+* copy settings_ala12.wcfg and change the filenames
+
+
+
+Execution command for Ala2 "Alanindipeptide":
+## Results
+* output directory  will have for each iteration some output
+* full output on bluewaters on at "remote_output_directory" as set in settings_*.wcfg
+
+
+##Profiling
+run ```python analytics_timing.py```, this gives information how much time which steps took.
+
+##Notes 
+The ```extasy_grlsd.py``` script contains the information about the application
+execution workflow and the associated data movement. Please take a look at all
+the comments to understand the various sections. 
+
