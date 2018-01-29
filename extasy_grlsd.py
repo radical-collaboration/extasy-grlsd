@@ -97,7 +97,7 @@ def create_workflow(Kconfig):
 
         sim_stage = Stage()
         sim_task_ref = list()
-        for sim_num in range(ENSEMBLE_SIZE):
+        for sim_num in range(min(ENSEMBLE_SIZE,1000)):
 
             sim_task = Task()
             sim_task.pre_exec = [   'module load bwpy', 
@@ -105,7 +105,7 @@ def create_workflow(Kconfig):
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
             sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
-            sim_task.cores = 16
+            sim_task.cores = 1
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']
@@ -145,7 +145,7 @@ def create_workflow(Kconfig):
 
         pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
         
-        for sim_num in range(ENSEMBLE_SIZE):
+        for sim_num in range(min(ENSEMBLE_SIZE,1000)):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
@@ -314,7 +314,7 @@ if __name__ == '__main__':
             'walltime': RPconfig.WALLTIME,
             'cores': RPconfig.PILOTSIZE,
             'project': RPconfig.ALLOCATION,
-            #'queue': RPconfig.QUEUE,
+            'queue': RPconfig.QUEUE,
             'access_schema': 'gsissh'
         }
 

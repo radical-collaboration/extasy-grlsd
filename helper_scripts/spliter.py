@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     if grofile_obj.nruns<num_tasks:
         print "###ERROR: number of runs should be greater or equal to the number of tasks."
-        sys.exit(1)
+        #sys.exit(1)
 
     nruns_per_task = [grofile_obj.nruns/num_tasks for _ in xrange(num_tasks)]
     nextraruns=grofile_obj.nruns%num_tasks
