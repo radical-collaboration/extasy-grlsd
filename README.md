@@ -9,15 +9,14 @@ and made public from Vivek's account)
 ## EnTK, Radical Pilot Installation
 
 ```
-pip install radical.pilot
 git clone https://github.com/radical-collaboration/extasy-grlsd.git
-git clone https://github.com/radical-cybertools/radical.entk.git
-cd radical.entk
-git checkout feature/gpu
-pip install .
+pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
+pip install git+https://github.com/radical-cybertools/saga-python.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/radical.entk.git@feature-gpu
 apt-get install rabbitmq-server
-
 ```
+
 * Note: For the current version, you will have to install RabbitMQ. 
 [This link](http://radicalentk-06.readthedocs.io/en/arch-v0.6/install.html) provides two methods in which
 you can install RabbitMQ.
