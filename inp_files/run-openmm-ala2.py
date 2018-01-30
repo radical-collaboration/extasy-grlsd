@@ -15,6 +15,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--gro',dest='grofile_name',required=True,type=str)
 parser.add_argument('--out',dest='output_grofile_name',required=True,type=str)
+parser.add_argument('--save_traj',dest='save_traj',required=True,type=str)
+parser.add_argument('--md_steps',dest='md_steps',required=True,type=int)
 args = parser.parse_args()
 #grofile_name='start2.gro
 
@@ -23,7 +25,7 @@ file.save_pdb('tmp_in.pdb')
 pdb=mdtraj.load('tmp_in.pdb')
 #pdb=mdtraj.load(grofile_name)
 #save_traj=False
-save_traj=True
+#save_traj=True
 print("num of structures:",len(pdb))
 for i in range(len(pdb)):
 	topology = pdb[i].topology.to_openmm()
@@ -47,9 +49,9 @@ for i in range(len(pdb)):
 	#simulation.reporters.append(PDBReporter('output.pdb', 1000)) 
 	simulation.reporters.append(StateDataReporter(stdout, 1000, step=True,
 	potentialEnergy=True, temperature=True)) 
-	if save_traj:
+	if save_traj=='True':
 	  simulation.reporters.append(DCDReporter('output.dcd', 10)) 
-	steps=20000 #10000=2sec each, 100000=20sec
+	steps=md_step #20000 #10000=2sec each, 100000=20sec
 	start=datetime.now()
 	simulation.step(steps)
 	end = datetime.now()

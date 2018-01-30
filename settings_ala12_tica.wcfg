@@ -1,12 +1,12 @@
 #-------------------------Applications----------------------
-simulator               =  'openmm'           # Simulator to be loaded, only openmm
-analyzer                =  'Lsdmap'          # needs 'clustering' restarts
-restarts                =  'clustering'     # works only with Lsdmap
+simulator               = 'openmm'           # Simulator to be loaded, only openmm
+analyzer                = 'TICA+MSM'          # needs 'clustering' restarts
+restarts                = 'one_over_microstatecounts'     # works only with Lsdmap
 #--------------------------Allocation--------------------------------
 
-WALLTIME                =  120    #120         # Walltime to be requested for the pilot in minutes
-PILOTSIZE               =  256     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
-REMOTE_HOST             = 'ncsa.bw_aprun' #'ncsa.bw'        # Label/Name of the Remote Machine
+WALLTIME                = 120    #120         # Walltime to be requested for the pilot in minutes
+PILOTSIZE               = 256     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
+REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw'      # Label/Name of the Remote Machine
 ALLOCATION              = 'bamm'                    # Allocation to be charged
 QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
 #--------------------------General--------------------------------
@@ -17,16 +17,15 @@ num_CUs_per_MD_replica  = 32                   # each replica uses that many Cus
 num_iterations          = 20                    # Number of iterations of Simulation-Analysis
 start_iter              = 0                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
-remote_output_directory = '/u/sciteam/hruska/scratch/extasy-grlsd-ala2'   
+remote_output_directory = '/u/sciteam/hruska/scratch/extasy-grlsd-ala12-tica'   
 
 #--------------------------Simulation--------------------------------
-md_steps                = 200000  #10000=2sec each, 100000=20sec
-md_input_file           = './inp_files/input-ala2-single.gro'        # Entire path to the MD Input file - Do not use $HOME or the likes
-md_run_file             = './inp_files/run-openmm-ala2.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
+md_steps                = 10000    #1000=2sec each, 10000=20sec
+md_input_file           = './inp_files/input-ala12-single.gro'        # Entire path to the MD Input file - Do not use $HOME or the likes
+md_run_file             = './inp_files/run-openmm-ala12.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
 
 #--------------------------Analysis----------------------------------
 lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMap configuration file - Do not use $HOME or the likes
-num_runs             = 1000                # Number of runs to be performed in the Selection step in Analysis
 w_file               = 'weight.w'           # Filename to be used for the weight file
 max_alive_neighbors  = '10'                 # Maximum alive neighbors to be considered while reweighting
 max_dead_neighbors   = '1'                  # Maximum dead neighbors to be considered while reweighting

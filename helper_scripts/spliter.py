@@ -15,19 +15,29 @@ import gro
 import os
 import sys
 import shutil
+import argparse
 
 if __name__ == '__main__':
     num_tasks = int(sys.argv[1])
-    grofile_name = sys.argv[2]
-
+    grofile_name = str(sys.argv[2])
+   
     curdir = os.path.dirname(os.path.abspath(__file__))
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--clone',dest='clone',required=False,type=int)
+    args = parser.parse_args()
+    
+    if args.clone is not None:
+      print 'Cloning replicas'
+      for i in range(args.clone):
+        os.system('cat '+grofile_name+' >> input-cloned_replicas.gro')
 
     print 'Prepare grofiles for splitting'
 
-    grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/' + grofile_name)
+    grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/input-cloned_replicas.gro')
 
     if grofile_obj.nruns<num_tasks:
-        print "###ERROR: number of runs should be greater or equal to the number of tasks."
+        print "WARNING: number of runs should be greater or equal to the number of tasks."
         #sys.exit(1)
 
     nruns_per_task = [grofile_obj.nruns/num_tasks for _ in xrange(num_tasks)]

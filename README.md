@@ -88,21 +88,22 @@ rabbitmq-server &
 ## Executing the script
 
 Setup the walltime, allocation and cores you require in resource_config.rcfg and all settings in the used settings_*.wcfg.
+If you want to start a new adaptive sampling set start_iter to 0, if you want to extend the last adaptive sampling with more iterations set start_iter to the next iteration to run. 
 
 Execution command for Ala2 "Alanine dipeptide", for longer simulations best to run inside tmux on an machine which can run undisturbed for long times:
 
 ```
-python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig settings_ala2.wcfg
+python extasy_grlsd.py --Kconfig settings_ala2.wcfg
 ```
 
 Execution command for Ala12 "Alanine12": 
 
 ```
-python extasy_grlsd.py --RPconfig resource_config.rcfg --Kconfig settings_ala12.wcfg
+python extasy_grlsd.py --Kconfig settings_ala12.wcfg
 ```
 
 
-##Your own system
+## Your own system
 The MD simulation is in openmm, you have to inp_files:
 * the gromacs structure
 * a copy of run-openmm-ala12.py with any changes for you system (number of steps, forcefield,...)
@@ -110,16 +111,15 @@ The MD simulation is in openmm, you have to inp_files:
 
 
 
-Execution command for Ala2 "Alanindipeptide":
 ## Results
 * output directory  will have for each iteration some output
 * full output on bluewaters on at "remote_output_directory" as set in settings_*.wcfg
 
 
-##Profiling
+## Profiling
 run ```python analytics_timing.py```, this gives information how much time which steps took.
 
-##Notes 
+## Notes 
 The ```extasy_grlsd.py``` script contains the information about the application
 execution workflow and the associated data movement. Please take a look at all
 the comments to understand the various sections. 
