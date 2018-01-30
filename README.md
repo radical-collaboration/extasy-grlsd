@@ -13,7 +13,7 @@ pip install radical.pilot
 git clone https://github.com/radical-collaboration/extasy-grlsd.git
 git clone https://github.com/radical-cybertools/radical.entk.git
 cd radical.entk
-git checkout devel
+git checkout feature/gpu
 pip install .
 apt-get install rabbitmq-server
 

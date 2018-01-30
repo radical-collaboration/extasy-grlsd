@@ -15,6 +15,54 @@ import imp
 import json
 import traceback
 
+
+'''
+
+This branch modifies the openmm branch to enable use of GPUs for the openmm
+tasks.
+All cpu and gpu requirements are described with the dictionary format:
+{   'processes': 1, 'process_type': 'MPI',
+    'threads_per_process': 16, 'thread_type': 'OpenMP'}
+
+You can assign them to ```task.cpu_reqs``` to assign cpus or ```task.gpu_reqs```
+to assign gpus. The default for cpu_reqs is 
+{   'processes': 1, 'process_type': None,
+    'threads_per_process': 1, 'thread_type': None}
+
+and the default for gpu_reqs is 
+{   'processes': 0, 'process_type': None,
+    'threads_per_process': 0, 'thread_type': None}
+
+See sim_task for example.
+
+Only other change required is the specification of the resource requirement.
+Instead of 
+
+res_dict = {
+
+            'resource': RPconfig.REMOTE_HOST,
+            'walltime': RPconfig.WALLTIME,
+            'cores': RPconfig.PILOTSIZE,
+            'project': RPconfig.ALLOCATION,
+            'access_schema': 'gsissh'
+        }
+
+You have 
+
+res_dict = {
+
+            'resource': RPconfig.REMOTE_HOST,
+            'walltime': RPconfig.WALLTIME,
+            'cpus': RPconfig.PILOTSIZE,
+            'gpus': RPconfig.PILOTSIZE/32,  # number of gpus requested = number 
+                                            of nodes
+            'project': RPconfig.ALLOCATION,
+            'queue': RPconfig.QUEUE,       # Might require specifying a gpu 
+                                            friendly queue name
+            'access_schema': 'gsissh'
+        }
+'''
+
 os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://eh22:a3Qv*zs0@ds141209.mlab.com:41209/clementigroup'
 #os.environ['RADICAL_PILOT_DBURL'] = 'mongodb://entk:entk@ds033196.mlab.com:33196/extasy_grlsd'
 os.environ['RADICAL_ENTK_VERBOSE'] = 'INFO'
@@ -48,16 +96,17 @@ def create_workflow(Kconfig):
 
 
     if cur_iter==0:
-      pre_proc_stage = Stage()
-      pre_proc_task = Task()
-      pre_proc_task.pre_exec = ['module load bwpy',
-                                'export iter=-1']
-      pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.num_CUs,
-                                  os.path.basename(Kconfig.md_input_file)
-                              ]
-      pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
+        pre_proc_stage = Stage()
+        pre_proc_task = Task()
+        pre_proc_task.pre_exec = ['module load bwpy',
+                                    'export iter=-1']
+        pre_proc_task.executable = ['python']
+        pre_proc_task.arguments = [ 'spliter.py',
+                                      Kconfig.num_CUs,
+                                      os.path.basename(Kconfig.md_input_file)
+                                  ]
+        
+        pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
                                        '$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
                                        '$SHARED/spliter.py > spliter.py',
                                        '$SHARED/gro.py > gro.py']
@@ -105,7 +154,13 @@ def create_workflow(Kconfig):
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
             sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
-            sim_task.cores = 16
+            #sim_task.cores = 16
+            # Describe the resource requirement in terms of processes and threads
+            sim_task.gpu_reqs = {   'processes': 1,
+                                    'process_type': 'MPI',
+                                    'threads_per_process': 16,
+                                    'thread_type': 'OpenMP'
+                                    }
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']
@@ -178,7 +233,7 @@ def create_workflow(Kconfig):
                               '-w', 'weight.w'
                               ]
 
-        ana_task.cores = 1
+        #ana_task.cores = 1
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
                                     '%s/iter_%s/tmpha.gro > tmpha.gro' % (combined_path,cur_iter)]
         ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
@@ -305,12 +360,15 @@ if __name__ == '__main__':
         wf = create_workflow(Kconfig)
 
         # Create a dictionary describe four mandatory keys:
-        # resource, walltime, cores and project
+        # resource, walltime, cpus and project 
+        # and two optional keys
+        # gpus, queue and access_schema
         res_dict = {
 
             'resource': RPconfig.REMOTE_HOST,
             'walltime': RPconfig.WALLTIME,
-            'cores': RPconfig.PILOTSIZE,
+            'cpus': RPconfig.PILOTSIZE,
+            'gpus': RPconfig.PILOTSIZE/32, # number of gpus requested = number of nodes
             'project': RPconfig.ALLOCATION,
             #'queue': RPconfig.QUEUE,
             'access_schema': 'gsissh'
