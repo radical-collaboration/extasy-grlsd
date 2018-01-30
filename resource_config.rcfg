@@ -1,5 +1,5 @@
 REMOTE_HOST = 'ncsa.bw'           # Label/Name of the Remote Machine
 ALLOCATION  = 'bamm'                    # Allocation to be charged
-WALLTIME    = 240#1440    #120                    # Walltime to be requested for the pilot
+WALLTIME    = 60#1440    #120                    # Walltime to be requested for the pilot
 PILOTSIZE   = 1024#128     #2560                   # Number of cores to be reserved
 QUEUE       = 'high'      #'high'             # Name of the queue in the remote machine

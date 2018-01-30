@@ -105,7 +105,7 @@ def create_workflow(Kconfig):
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
             sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
-            sim_task.cores = 1
+            sim_task.cores = 32 #on bluewaters tasks on one node are executed concurently
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '>', 'md.log']

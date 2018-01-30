@@ -50,7 +50,7 @@ for i in range(len(pdb)):
 	potentialEnergy=True, temperature=True)) 
 	if save_traj:
 	  simulation.reporters.append(DCDReporter('output.dcd', 10)) 
-	steps=10000 #1000=4sec each, 10000=40sec
+	steps=5000 #1000=4sec each, 10000=40sec
 	start=datetime.now()
 	simulation.step(steps)
 	end = datetime.now()
