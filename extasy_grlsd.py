@@ -24,7 +24,7 @@ def create_workflow(Kconfig):
     # ------------------------------------------------------------------------------------------------------------------
     cur_iter = int(Kconfig.start_iter)#0
     #assumed of iteration non zero that files are in combined_path
-    combined_path=str(Kconfig.remote_output_directory)'/u/sciteam/hruska/scratch/extasy-grlsd'
+    combined_path=str(Kconfig.remote_output_directory)  #'/u/sciteam/hruska/scratch/extasy-grlsd'
     if cur_iter==0:
     	restart_iter=0
     else:
@@ -40,7 +40,7 @@ def create_workflow(Kconfig):
                                 'export iter=-1']
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.parallel_MD_sim,
+                                  Kconfig.num_parallel_MD_sim,
                                   'input.gro','-clone',str(Kconfig.num_replicas)
                               ]
       pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
@@ -60,7 +60,7 @@ def create_workflow(Kconfig):
                                 'export iter=-1']
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.parallel_MD_sim,
+                                  Kconfig.num_parallel_MD_sim,
                                   'input.gro'
                               ]
       pre_proc_task.copy_input_data = ['%s/iter_%s/out.gro > input.gro'  % (combined_path,cur_iter-1),
@@ -83,7 +83,7 @@ def create_workflow(Kconfig):
 
         sim_stage = Stage()
         sim_task_ref = list()
-        for sim_num in range(min(int(Kconfig.parallel_MD_sim),int(Kconfig.num_replicas))):
+        for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
 
             sim_task = Task()
             sim_task.pre_exec = [   'module load bwpy', 
@@ -91,8 +91,14 @@ def create_workflow(Kconfig):
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]
             sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
-            
-            sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
+            if Kconfig.use_gpus=='False':
+              sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
+            else:
+              sim_task.gpu_reqs = {   'processes': 1,
+                                    'process_type': 'MPI',
+                                    'threads_per_process': int(Kconfig.num_CUs_per_MD_replica),
+                                    'thread_type': 'OpenMP'
+                                }
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '--md_steps',str(Kconfig.md_steps), '--save_traj', 'False','>', 'md.log']
@@ -130,7 +136,7 @@ def create_workflow(Kconfig):
 
         pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
         
-        for sim_num in range(min(int(Kconfig.parallel_MD_sim),int(Kconfig.num_replicas))):
+        for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
@@ -287,15 +293,30 @@ if __name__ == '__main__':
 
         # Create a dictionary describe four mandatory keys:
         # resource, walltime, cores and project
-        res_dict = {
-
+        if Kconfig.use_gpus=='False':
+          res_dict = {
             'resource': Kconfig.REMOTE_HOST,
             'walltime': Kconfig.WALLTIME,
             'cores': Kconfig.PILOTSIZE,
             'project': Kconfig.ALLOCATION,
             'queue': Kconfig.QUEUE,
             'access_schema': 'gsissh'
-        }
+          }
+	elif Kconfig.use_gpus=='True':
+          res_dict = {
+            'resource': Kconfig.REMOTE_HOST,
+            'walltime': Kconfig.WALLTIME,
+            'cpus': Kconfig.PILOTSIZE,
+            'gpus': Kconfig.PILOTSIZE/32,
+            'project': Kconfig.ALLOCATION,
+            'queue': Kconfig.QUEUE,
+            'access_schema': 'gsissh'
+          }
+ 
+	  
+        else:
+          print "use_gpus not recognized"
+          
 
         # Create Resource Manager object with the above resource description
         rman = ResourceManager(res_dict)

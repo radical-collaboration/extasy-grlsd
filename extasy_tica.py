@@ -95,7 +95,7 @@ def create_workflow(Kconfig):
             sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
-                                  '--out', 'out.gro', '--md_steps',str(Kconfig.md_steps), '--save_traj', 'False','>', 'md.log']
+                                  '--out', 'out.gro', '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
             sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
 
             #if Kconfig.ndx_file is not None:

@@ -9,17 +9,11 @@
 In an conda python2.7 installation:
 ```
 conda install -c conda-forge rabbitmq-server tmux pip
-pip install radical.pilot
-git clone https://github.com/radical-cybertools/radical.entk.git
-cd radical.entk
-git checkout devel
-pip install .
-
-git clone https://github.com/radical-cybertools/radical.analytics
-cd radical.analytics/
-git checkout devel
-pip install .
-
+pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
+pip install git+https://github.com/radical-cybertools/saga-python.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/radical.entk.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/radical.analytics@devel
 ```
 ### Alternative Docker installation
 

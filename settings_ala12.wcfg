@@ -6,8 +6,9 @@ restarts                = 'clustering'     # works only with Lsdmap
 
 WALLTIME                = 120    #120         # Walltime to be requested for the pilot in minutes
 PILOTSIZE               = 256     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
-REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw'      # Label/Name of the Remote Machine
+REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw' 'ncsa.bw_aprun'     # Label/Name of the Remote Machine
 ALLOCATION              = 'bamm'                    # Allocation to be charged
+use_gpus                = 'True'
 QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
 #--------------------------General--------------------------------
 
@@ -29,4 +30,4 @@ lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMa
 w_file               = 'weight.w'           # Filename to be used for the weight file
 max_alive_neighbors  = '10'                 # Maximum alive neighbors to be considered while reweighting
 max_dead_neighbors   = '1'                  # Maximum dead neighbors to be considered while reweighting
-
+helper_scripts = './helper_scripts'
