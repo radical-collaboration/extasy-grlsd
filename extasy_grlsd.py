@@ -39,9 +39,9 @@ def create_workflow(Kconfig):
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                 'export iter=-1']
       pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.num_parallel_MD_sim,
-                                  'input.gro','-clone',str(Kconfig.num_replicas)
+      pre_proc_task.arguments = [ 'spliter.py','-n',
+                                  Kconfig.num_parallel_MD_sim,'-gro',
+                                  'input.gro','--clone',str(Kconfig.num_replicas)
                               ]
       pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
                                        '$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
@@ -59,9 +59,9 @@ def create_workflow(Kconfig):
       pre_proc_task.pre_exec = ['module load bwpy',
                                 'export iter=-1']
       pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter.py',
+      pre_proc_task.arguments = [ 'spliter.py','-n',
                                   Kconfig.num_parallel_MD_sim,
-                                  'input.gro'
+                                  '-gro','input.gro'
                               ]
       pre_proc_task.copy_input_data = ['%s/iter_%s/out.gro > input.gro'  % (combined_path,cur_iter-1),
                                        '$SHARED/spliter.py > spliter.py',
@@ -94,11 +94,17 @@ def create_workflow(Kconfig):
             if Kconfig.use_gpus=='False':
               sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
             else:
-              sim_task.gpu_reqs = {   'processes': 1,
-                                    'process_type': 'MPI',
-                                    'threads_per_process': int(Kconfig.num_CUs_per_MD_replica),
-                                    'thread_type': 'OpenMP'
+              sim_task.gpu_reqs = { 'processes': 1,
+                                    'process_type': None,
+                                    'threads_per_process': 1,
+                                    'thread_type': None
                                 }
+              sim_task.cpu_reqs = { 'processes': 1, 
+                                    'process_type': None, 
+                                    'threads_per_process': 1, 
+                                    'thread_type': None
+                                  }
+              
             sim_task.arguments = ['run_openmm.py',
                                   '--gro', 'start.gro',
                                   '--out', 'out.gro', '--md_steps',str(Kconfig.md_steps), '--save_traj', 'False','>', 'md.log']

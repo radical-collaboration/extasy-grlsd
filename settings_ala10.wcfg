@@ -8,22 +8,22 @@ WALLTIME                = 120    #120         # Walltime to be requested for the
 PILOTSIZE               = 256     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
 REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw' 'ncsa.bw_aprun'     # Label/Name of the Remote Machine
 ALLOCATION              = 'bamm'                    # Allocation to be charged
-use_gpus                = 'False'
+use_gpus                = 'True'
 QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
 #--------------------------General--------------------------------
 
 num_replicas            = 100                 #total num replica
 num_parallel_MD_sim     = 8     #160           # Total Number of tasks or Compute Units
-num_CUs_per_MD_replica  = 32                   # each replica uses that many Cus
+num_CUs_per_MD_replica  = 16                   # each replica uses that many Cus
 num_iterations          = 20                    # Number of iterations of Simulation-Analysis
 start_iter              = 0                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
-remote_output_directory = '/u/sciteam/hruska/scratch/extasy-grlsd-ala12'   
+remote_output_directory = '/u/sciteam/hruska/scratch/extasy-grlsd-ala10'   
 
 #--------------------------Simulation--------------------------------
 md_steps                = 10000    #1000=2sec each, 10000=20sec
-md_input_file           = './inp_files/input-ala12-single.gro'        # Entire path to the MD Input file - Do not use $HOME or the likes
-md_run_file             = './inp_files/run-openmm-ala12.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
+md_input_file           = './inp_files/input-ala10-single.gro'        # Entire path to the MD Input file - Do not use $HOME or the likes
+md_run_file             = './inp_files/run-openmm-ala10.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
 
 #--------------------------Analysis----------------------------------
 lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMap configuration file - Do not use $HOME or the likes

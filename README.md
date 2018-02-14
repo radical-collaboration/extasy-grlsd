@@ -8,7 +8,7 @@
 
 In an conda python2.7 installation:
 ```
-conda install -c conda-forge rabbitmq-server tmux pip
+conda install -c conda-forge rabbitmq-server tmux pip git
 pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
 pip install git+https://github.com/radical-cybertools/saga-python.git@feature-gpu
 pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature-gpu
