@@ -33,10 +33,11 @@ if __name__ == '__main__':
       print 'Cloning replicas'
       for i in range(args.clone):
         os.system('cat '+args.grofile_name+' >> input-cloned_replicas.gro')
-
-    print 'Prepare grofiles for splitting'
-
-    grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/input-cloned_replicas.gro')
+      print 'Prepare grofiles for splitting'
+      grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/input-cloned_replicas.gro')
+    else:
+      print 'Prepare grofiles for splitting'
+      grofile_obj = gro.GroFile(os.path.dirname(os.path.abspath(__file__)) + '/out.gro')
 
     if grofile_obj.nruns<args.num_tasks:
         print "WARNING: number of runs should be greater or equal to the number of tasks."

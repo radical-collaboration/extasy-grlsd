@@ -50,9 +50,9 @@ for i in range(len(pdb)):
 	#simulation.reporters.append(PDBReporter('output.pdb', 1000)) 
 	simulation.reporters.append(StateDataReporter(stdout, 1000, step=True,
 	potentialEnergy=True, temperature=True)) 
-	if save_traj=='True':
+	if args.save_traj=='True':
 	  simulation.reporters.append(DCDReporter('output%s.dcd' % i, 10)) 
-	steps=md_steps #1000=2sec each, 10000=20sec
+	steps=args.md_steps #1000=2sec each, 10000=20sec
 	start=datetime.now()
 	simulation.step(steps)
 	end = datetime.now()

@@ -52,5 +52,5 @@ if __name__ =='__main__':
 
     os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python reweighting.py -c %s -n %s -s %s -w %s -wout %s -o %s --max_alive_neighbors=%s --max_dead_neighbors=%s' % (md_output_file,nearest_neighbor_file,num_clone_files,w_file, wfile_out, outgrofile_name,max_alive_neighbors,max_dead_neighbors))
 
-    os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python spliter.py {0} {1}'.format(numCUs,outgrofile_name))
+    os.system('/sw/bw/bwpy/0.3.0/python-single/usr/bin/python spliter.py -n {0} -gro {1}'.format(numCUs,outgrofile_name))
 
