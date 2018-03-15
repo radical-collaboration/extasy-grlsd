@@ -308,22 +308,23 @@ if __name__ == '__main__':
             'queue': Kconfig.QUEUE,
             'access_schema': 'gsissh'
           }
-	elif Kconfig.use_gpus=='True':
+        elif Kconfig.use_gpus=='True':
+          print "using gpus"
           res_dict = {
             'resource': Kconfig.REMOTE_HOST,
             'walltime': Kconfig.WALLTIME,
+            'cores': Kconfig.PILOTSIZE,
             'cpus': Kconfig.PILOTSIZE,
-            'gpus': Kconfig.PILOTSIZE/32,
+            'cpu_processes': Kconfig.num_CUs_per_MD_replica,#PILOTSIZE,
+            'gpus': Kconfig.PILOTSIZE/16,
             'project': Kconfig.ALLOCATION,
             'queue': Kconfig.QUEUE,
             'access_schema': 'gsissh'
-          }
- 
-	  
+          }	  
         else:
-          print "use_gpus not recognized"
+          print("use_gpus not recognized")
           
-
+        print res_dict
         # Create Resource Manager object with the above resource description
         rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
