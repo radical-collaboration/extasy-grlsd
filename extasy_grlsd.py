@@ -347,7 +347,7 @@ if __name__ == '__main__':
         #    rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager, only one extasy script on one rabbit-mq server now
-        appman = AppManager()#port=args.port)
+        appman = AppManager(hostname='two.radical-project.org', port=33118)#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager
