@@ -86,19 +86,18 @@ def create_workflow(Kconfig):
         for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
 
             sim_task = Task()
-            sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
             if Kconfig.use_gpus=='False':
+              sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
               sim_task.pre_exec = [   'module load bwpy',
                                      'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
                                      'export PATH=/u/sciteam/hruska/local/bin:$PATH',
                                     'export iter=%s' % cur_iter]  
               sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
             else:
-              sim_task.pre_exec = [   'module load bwpy',
-                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
-                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
-                                    'export iter=%s' % cur_iter,
-                                     'module load cudatoolkit']
+              sim_task.executable = ['python']
+              sim_task.pre_exec = [  'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit', 'module add cmake', 'module unload darshan, xalt',
+                                     'source  /mnt/c/scratch/sciteam/hruska/vpy/bin/activate',
+                                     'export iter=%s' % cur_iter]
               sim_task.gpu_reqs = { 'processes': 1,
                                     'process_type': None,
                                     'threads_per_process': 1,
@@ -351,7 +350,7 @@ if __name__ == '__main__':
         #    rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager, only one extasy script on one rabbit-mq server now
-        appman = AppManager(hostname='two.radical-project.org', port=33118)#port=args.port)
+        appman = AppManager(hostname='two.radical-project.org', port=33134)#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager
