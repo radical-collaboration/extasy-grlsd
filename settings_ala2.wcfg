@@ -8,6 +8,7 @@ WALLTIME                =  120    #120         # Walltime to be requested for th
 PILOTSIZE               =  256     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
 REMOTE_HOST             = 'ncsa.bw_aprun' #'ncsa.bw'        # Label/Name of the Remote Machine
 ALLOCATION              = 'bamm'                    # Allocation to be charged
+use_gpus                = 'False'
 QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
 #--------------------------General--------------------------------
 
