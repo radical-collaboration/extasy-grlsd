@@ -6,15 +6,28 @@
 
 ## Local python installation
 
-In an conda python2.7 installation:
+Make a new conda python2.7 installation:
+For CPU:
+
 ```
-conda install -c conda-forge rabbitmq-server tmux pip git
+conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
 pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
-pip install git+https://github.com/radical-cybertools/saga-python.git@feature-gpu
-pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature-gpu
-pip install git+https://github.com/radical-cybertools/radical.entk.git@feature-gpu
+pip install git+https://github.com/radical-cybertools/saga-python.git@devel
+pip install git+https://github.com/radical-cybertools/radical.pilot.git@devel
+pip install git+https://github.com/radical-cybertools/radical.entk.git@devel
 pip install git+https://github.com/radical-cybertools/radical.analytics@devel
 ```
+
+For GPU:
+```
+conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
+pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
+pip install git+https://github.com/radical-cybertools/saga-python.git@devel
+pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature/gpu
+pip install git+https://github.com/radical-cybertools/radical.entk.git@feature/gpu
+pip install git+https://github.com/radical-cybertools/radical.analytics@devel
+```
+check ``radical-stack```
 ### Alternative Docker installation
 
 [This link](http://radicalentk-06.readthedocs.io/en/arch-v0.6/install.html) provides two methods in which
