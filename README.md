@@ -7,26 +7,17 @@
 ## Local python installation
 
 Make a new conda python2.7 installation:
-For CPU:
+For CPU or GPU:
 
 ```
 conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
-pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
-pip install git+https://github.com/radical-cybertools/saga-python.git@devel
-pip install git+https://github.com/radical-cybertools/radical.pilot.git@devel
-pip install git+https://github.com/radical-cybertools/radical.entk.git@devel
-pip install git+https://github.com/radical-cybertools/radical.analytics@devel
+pip install git+https://github.com/radical-cybertools/radical.utils.git@devel  --upgrade
+pip install git+https://github.com/radical-cybertools/saga-python.git@devel  --upgrade
+pip install git+https://github.com/radical-cybertools/radical.pilot.git@devel  --upgrade
+pip install git+https://github.com/radical-cybertools/radical.entk.git@devel  --upgrade
+pip install git+https://github.com/radical-cybertools/radical.analytics@devel  --upgrade
 ```
 
-For GPU:
-```
-conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
-pip install git+https://github.com/radical-cybertools/radical.utils.git@devel
-pip install git+https://github.com/radical-cybertools/saga-python.git@devel
-pip install git+https://github.com/radical-cybertools/radical.pilot.git@feature/gpu
-pip install git+https://github.com/radical-cybertools/radical.entk.git@feature/gpu
-pip install git+https://github.com/radical-cybertools/radical.analytics@devel
-```
 check ``radical-stack```
 ### Alternative Docker installation
 
@@ -108,7 +99,13 @@ Execution command for Ala12 "Alanine12":
 ```
 python extasy_grlsd.py --Kconfig settings_ala12.wcfg
 ```
+For GPU Ala12:
 
+python extasy_grlsd.py --Kconfig settings_ala12-gpu.wcfg
+
+For PCU tica-extasy:
+
+python extasy_tica.py --Kconfig settings_ala12_tica.wcfg
 
 ## Your own system
 The MD simulation is in openmm, you have to inp_files:
