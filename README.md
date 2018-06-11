@@ -11,25 +11,14 @@ For CPU:
 
 ```
 conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
-pip install git+https://github.com/radical-cybertools/radical.utils.git@devel  --upgrade
-pip install git+https://github.com/radical-cybertools/saga-python.git@devel  --upgrade
-pip install git+https://github.com/radical-cybertools/radical.pilot.git@devel  --upgrade
-pip install git+https://github.com/radical-cybertools/radical.entk.git@devel  --upgrade
-pip install git+https://github.com/radical-cybertools/radical.analytics@devel  --upgrade
+git clone radical.utils, saga-python, radical.pilot radical.entk, radaical.analytics
+git checkout devel.
+git pull
+pip install .
 ```
 For GPU:
 
-```
-conda create -n extasy7 python=2.7
-conda activate extasy7
-
-conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
-pip install git+https://github.com/radical-cybertools/radical.utils.git@devel --upgrade
-pip install git+https://github.com/radical-cybertools/saga-python.git@devel --upgrade
-pip install git+https://github.com/radical-cybertools/radical.pilot.git@devel --upgrade
-pip install git+https://github.com/radical-cybertools/radical.entk.git@feature/gpu --upgrade
-pip install git+https://github.com/radical-cybertools/radical.analytics@devel --upgrade
-```
+same but for radical.pilot git checkout feature/gpu```
 
 check ``radical-stack```
 ### Alternative Docker installation
