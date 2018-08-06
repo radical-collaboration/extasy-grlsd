@@ -50,7 +50,7 @@ if __name__ =='__main__':
     except:
         pass
 
-    os.system('python reweighting.py -c %s -n %s -s %s -w %s -wout %s -o %s --max_alive_neighbors=%s --max_dead_neighbors=%s' % (md_output_file,nearest_neighbor_file,num_clone_files,w_file, wfile_out, outgrofile_name,max_alive_neighbors,max_dead_neighbors))
+    os.system('OMP_NUM_THREADS=1 python reweighting.py -c %s -n %s -s %s -w %s -wout %s -o %s --max_alive_neighbors=%s --max_dead_neighbors=%s' % (md_output_file,nearest_neighbor_file,num_clone_files,w_file, wfile_out, outgrofile_name,max_alive_neighbors,max_dead_neighbors))
 
-    os.system('python spliter.py -n {0} -gro {1}'.format(numCUs,outgrofile_name))
+    os.system('OMP_NUM_THREADS=1 python spliter.py -n {0} -gro {1}'.format(numCUs,outgrofile_name))
 

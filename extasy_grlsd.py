@@ -35,7 +35,7 @@ def create_workflow(Kconfig):
       pre_proc_stage = Stage()
       pre_proc_task = Task()
       pre_proc_task.pre_exec = ['module load bwpy', 'export tasks=pre_proc',  
-                                'export iter=-1']
+                                'export iter=-1','export OMP_NUM_THREADS=1']
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py','-n',
                                   Kconfig.num_parallel_MD_sim,'-gro',
@@ -55,7 +55,7 @@ def create_workflow(Kconfig):
       pre_proc_stage = Stage()
       pre_proc_task = Task()
       pre_proc_task.pre_exec = ['module load bwpy',
-                                'export tasks=pre_proc','export iter=-1']
+                                'export tasks=pre_proc','export iter=-1', 'export OMP_NUM_THREADS=1' ]
       pre_proc_task.executable = ['python']
       pre_proc_task.arguments = [ 'spliter.py','-n',
                                   Kconfig.num_parallel_MD_sim,
@@ -93,8 +93,8 @@ def create_workflow(Kconfig):
               sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
             else:
               sim_task.executable = ['python']
-              sim_task.pre_exec = [  'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
-                                     'export tasks=md','export iter=%s' % cur_iter]
+              sim_task.pre_exec = [  'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+                                     'export tasks=md','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
               sim_task.gpu_reqs = { 'processes': 1,
                                     'process_type': None,
                                     'threads_per_process': 1,
@@ -133,8 +133,8 @@ def create_workflow(Kconfig):
 
         pre_ana_stage = Stage()
         pre_ana_task = Task()
-        pre_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
-                                    'export iter=%s' % cur_iter]
+        pre_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
+                                    'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
         pre_ana_task.executable = ['python']
         pre_ana_task.arguments = ['pre_analyze_openmm.py']
 
@@ -160,7 +160,10 @@ def create_workflow(Kconfig):
         ana_stage = Stage()
         ana_task = Task()
         ana_task.pre_exec = [   
-'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=lsdmap','export iter=%s' % cur_iter ]
+'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+ 'export tasks=lsdmap',
+'export iter=%s' % cur_iter,
+'export OMP_NUM_THREADS=1' ]
         ana_task.executable = ['lsdmap'] #/u/sciteam/hruska/local/bin/lsdmap
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
                               '-c', 'tmpha.gro',
@@ -211,7 +214,7 @@ def create_workflow(Kconfig):
         if Kconfig.restarts == 'clustering':
           post_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
 'export tasks=post_ana',
-                                    'export iter=%s' % cur_iter        ]
+                                    'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1'   ]
           post_ana_task.executable = ['python']
           post_ana_task.arguments = [ 'post_analyze.py',                                   
                                     Kconfig.num_replicas,
