@@ -360,7 +360,7 @@ if __name__ == '__main__':
 
         # Assign the workflow as a set of Pipelines to the Application Manager
         #appman.assign_workflow(wf)
-        appman.workflow = wf
+        appman.workflow = set([wf])
 
         # Run the Application Manager
         appman.run()

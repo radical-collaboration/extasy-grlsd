@@ -160,7 +160,7 @@ def create_workflow(Kconfig):
         ana_stage = Stage()
         ana_task = Task()
         ana_task.pre_exec = [   
-'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+'module load PrgEnv-gnu','module unload bwpy', 'module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
  'export tasks=lsdmap',
 'export iter=%s' % cur_iter,
 'export OMP_NUM_THREADS=1' ]
@@ -212,7 +212,7 @@ def create_workflow(Kconfig):
         post_ana_task = Task()
         post_ana_task._name      = 'post_ana_task'
         if Kconfig.restarts == 'clustering':
-          post_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
+          post_ana_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
 'export tasks=post_ana',
                                     'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1'   ]
           post_ana_task.executable = ['python']
