@@ -174,9 +174,9 @@ def create_workflow(Kconfig):
         ana_task.cores = 1
         ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
                                     '%s/iter_%s/tmpha.gro > tmpha.gro' % (combined_path,cur_iter)]
-        ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
-                                     'lsdmap.log > output/iter_%s/lsdmap.log'%cur_iter,
+        ana_task.copy_output_data = ['lsdmap.log > $SHARED/results/iter_%s_lsdmap.log' % cur_iter,
+                                     'tmpha.eg > $SHARED/results/iter_%s_tmpha.eg' % cur_iter,
+                                     #'lsdmap.log > output/iter_%s/lsdmap.log'%cur_iter,
                                      'tmpha.ev > %s/iter_%s/tmpha.ev' % (combined_path,cur_iter),
                                      'tmpha.eps > %s/iter_%s/tmpha.eps' % (combined_path,cur_iter),
                                      'tmpha.eg > %s/iter_%s/tmpha.eg' % (combined_path,cur_iter),
@@ -187,7 +187,7 @@ def create_workflow(Kconfig):
             ana_task.link_input_data += ['%s/iter_%s/weight_out.w > weight.w' % (combined_path,cur_iter-1)]
 
         if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter_%s/lsdmap.log' % cur_iter]
+            ana_task.download_output_data = ['lsdmap.log > ./results/iter_%s_lsdmap.log' % cur_iter]
 
         ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
 

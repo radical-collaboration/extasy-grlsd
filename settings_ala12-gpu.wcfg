@@ -4,7 +4,7 @@ analyzer                = 'Lsdmap'          # needs 'clustering' restarts
 restarts                = 'clustering'     # works only with Lsdmap
 #--------------------------Allocation--------------------------------
 
-WALLTIME                = 120    #120         # Walltime to be requested for the pilot in minutes
+WALLTIME                = 30    #120         # Walltime to be requested for the pilot in minutes
 PILOTSIZE               = 64     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
 REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw' 'ncsa.bw_aprun'     # Label/Name of the Remote Machine
 ALLOCATION              = 'bamm'                    # Allocation to be charged
