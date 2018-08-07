@@ -24,7 +24,9 @@ def create_workflow(Kconfig):
     # ------------------------------------------------------------------------------------------------------------------
     cur_iter = int(Kconfig.start_iter)#0
     #assumed of iteration non zero that files are in combined_path
-    combined_path=str(Kconfig.remote_output_directory)'/u/sciteam/hruska/scratch/extasy-grlsd'
+    combined_path=str(Kconfig.remote_output_directory)  #'/u/sciteam/hruska/scratch/extasy-grlsd'
+    num_parallel=int(Kconfig.num_parallel_MD_sim)
+    num_replicas=int(Kconfig.num_replicas)
     if cur_iter==0:
     	restart_iter=0
     else:
@@ -34,41 +36,22 @@ def create_workflow(Kconfig):
     if cur_iter==0:
       pre_proc_stage = Stage()
       pre_proc_task = Task()
-      pre_proc_task.pre_exec = ['module load bwpy',  
-                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"',
-                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
-                                'export iter=-1']
+      pre_proc_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+                                     'export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
+                                ]
       pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.parallel_MD_sim,
-                                  'input.gro','-clone',str(Kconfig.num_replicas)
+      pre_proc_task.arguments = [ 'spliter-tica.py','--path', combined_path,  '--gro',
+                                  'input.gro','--clone',str(Kconfig.num_replicas)
                               ]
-      pre_proc_task.copy_input_data = ['$SHARED/%s > %s/iter_%s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path,cur_iter),
-                                       '$SHARED/%s > input.gro' % os.path.basename(Kconfig.md_input_file),
-                                       '$SHARED/spliter.py > spliter.py',
-                                       '$SHARED/gro.py > gro.py']
+      pre_proc_task.copy_input_data = [#'$SHARED/%s > %s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path),
+                                       '$SHARED/spliter-tica.py > spliter-tica.py',
+                                       '$SHARED/%s > %s/input.gro' % (Kconfig.md_input_file, combined_path)]
 
                                        
       pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
       pre_proc_stage.add_tasks(pre_proc_task)
       wf.add_stages(pre_proc_stage)
       # ------------------------------------------------------------------------------------------------------------------
-    else:
-      pre_proc_stage = Stage()
-      pre_proc_task = Task()
-      pre_proc_task.pre_exec = ['module load bwpy',
-                                'export iter=-1']
-      pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter.py',
-                                  Kconfig.parallel_MD_sim,
-                                  'input.gro'
-                              ]
-      pre_proc_task.copy_input_data = ['%s/iter_%s/out.gro > input.gro'  % (combined_path,cur_iter-1),
-                                       '$SHARED/spliter.py > spliter.py',
-                                       '$SHARED/gro.py > gro.py']
-      pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
-      pre_proc_stage.add_tasks(pre_proc_task)
-      wf.add_stages(pre_proc_stage)
     
     while(cur_iter <  int(Kconfig.num_iterations)):
 
@@ -76,38 +59,49 @@ def create_workflow(Kconfig):
         # sim_stage:
         #     Purpose:  In iter=1, use the input files from pre_loop, else use the outputs of the analysis stage in the
         #               previous iteration. Run gromacs on each of the smaller files. Parameter files and executables
-        #                are input from pre_loop. There are 'numCUs' number of instances of gromacs per iteration.
+        #                are input from pre_loop. There arei 'numCUs' number of instances of gromacs per iteration.
         #     Arguments :
         #           grompp    = gromacs parameters filename
         #           topol     = topology filename
 
         sim_stage = Stage()
         sim_task_ref = list()
-        for sim_num in range(min(int(Kconfig.parallel_MD_sim),int(Kconfig.num_replicas))):
-
-            sim_task = Task()
-            sim_task.pre_exec = [   'module load bwpy', 
-                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
-                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
-                                    'export iter=%s' % cur_iter]
-            sim_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
-            
-            sim_task.cores = int(Kconfig.num_CUs_per_MD_replica) #on bluewaters tasks on one node are executed concurently
-            sim_task.arguments = ['run_openmm.py',
-                                  '--gro', 'start.gro',
-                                  '--out', 'out.gro', '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
-            sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
+        def_rep_per_thread=int(num_replicas/num_parallel)
+        num_allocated_rep=0
+        num_used_threads=0
+        while(num_allocated_rep<num_replicas):
+          if (num_used_threads==num_parallel):
+             print("ALLERT tried use more gpus than allocated")
+          if ((num_replicas-num_allocated_rep)>def_rep_per_thread):
+             use_replicas=def_rep_per_thread
+          else:
+             use_replicas=(num_replicas-num_allocated_rep)
+          sim_task = Task()
+          sim_task.executable = ['python']
+          sim_task.pre_exec = [  'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+                                     'export tasks=md','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
+          sim_task.gpu_reqs = { 'processes': 1,
+                                    'process_type': None,
+                                    'threads_per_process': 1,
+                                    'thread_type': None
+                                }
+          sim_task.cpu_reqs = { 'processes': 0, 
+                                    'process_type': None, 
+                                    'threads_per_process': 0, 
+                                    'thread_type': None
+                                  }
+          sim_task.arguments = ['run_openmm.py',
+                                  '--trajstride', '10', '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
+                                  '--path',combined_path,'--iter',str(cur_iter),
+                                  '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
+          sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
 
             #if Kconfig.ndx_file is not None:
             #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
-            if restart_iter==cur_iter:
-            	sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (pre_proc_task_ref, sim_num))
-            else:
-                sim_task.link_input_data.append('%s/temp/start%s.gro > start.gro' % (post_ana_task_ref, sim_num))
             
-
-            sim_task_ref.append('$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, sim_stage.uid, sim_task.uid))
-            sim_stage.add_tasks(sim_task)
+          num_allocated_rep=num_allocated_rep+use_replicas
+          sim_task_ref.append('$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, sim_stage.uid, sim_task.uid))
+          sim_stage.add_tasks(sim_task)
 
         wf.add_stages(sim_stage)
         # --------------------------------------------------------------------------------------------------------------
@@ -121,16 +115,14 @@ def create_workflow(Kconfig):
 
         pre_ana_stage = Stage()
         pre_ana_task = Task()
-        pre_ana_task.pre_exec = [    'module load bwpy', 
-                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
-                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
-                                    'export iter=%s' % cur_iter]
-        pre_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
+        pre_ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
+                                    'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
+        pre_ana_task.executable = ['python']
         pre_ana_task.arguments = ['pre_analyze_openmm.py']
 
         pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
         
-        for sim_num in range(min(int(Kconfig.parallel_MD_sim),int(Kconfig.num_replicas))):
+        for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
         pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
@@ -149,13 +141,11 @@ def create_workflow(Kconfig):
 
         ana_stage = Stage()
         ana_task = Task()
-        ana_task.pre_exec = [   'module load bwpy',
-                                'module load platform-mpi',
-                                'export PYTHONPATH=/u/sciteam/balasubr/.local/lib/python2.7/site-packages:$PYTHONPATH',
-                                'export PATH=/u/sciteam/balasubr/.local/bin:$PATH',
-                                'source /u/sciteam/balasubr/ve-extasy/bin/activate',
-                                'export iter=%s' % cur_iter
-                                ]
+        ana_task.pre_exec = [   
+'module load PrgEnv-gnu','module unload bwpy', 'module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+ 'export tasks=lsdmap',
+'export iter=%s' % cur_iter,
+'export OMP_NUM_THREADS=1' ]
         ana_task.executable = ['lsdmap'] #/u/sciteam/hruska/local/bin/lsdmap
         ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
                               '-c', 'tmpha.gro',
@@ -204,12 +194,10 @@ def create_workflow(Kconfig):
         post_ana_task = Task()
         post_ana_task._name      = 'post_ana_task'
         if Kconfig.restarts == 'clustering':
-          post_ana_task.pre_exec = [ 'module load bwpy', 
-                                     'export PYTHONPATH="/u/sciteam/hruska/local/lib/python2.7/site-packages:/u/sciteam/hruska/local:/u/sciteam/hruska/local/lib/python:$PYTHONPATH"', 
-                                     'export PATH=/u/sciteam/hruska/local/bin:$PATH',
-                                    'export iter=%s' % cur_iter
-                                ]
-          post_ana_task.executable = ['/sw/bw/bwpy/0.3.0/python-single/usr/bin/python']
+          post_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
+'export tasks=post_ana',
+                                    'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1'   ]
+          post_ana_task.executable = ['python']
           post_ana_task.arguments = [ 'post_analyze.py',                                   
                                     Kconfig.num_replicas,
                                     'tmpha.ev',
@@ -287,39 +275,55 @@ if __name__ == '__main__':
 
         # Create a dictionary describe four mandatory keys:
         # resource, walltime, cores and project
-        res_dict = {
-
+        if Kconfig.use_gpus=='False':
+          res_dict = {
             'resource': Kconfig.REMOTE_HOST,
             'walltime': Kconfig.WALLTIME,
             'cores': Kconfig.PILOTSIZE,
             'project': Kconfig.ALLOCATION,
             'queue': Kconfig.QUEUE,
             'access_schema': 'gsissh'
-        }
-
+          }
+        elif Kconfig.use_gpus=='True':
+          print "using gpus"
+          res_dict = {
+            'resource': Kconfig.REMOTE_HOST,
+            'walltime': Kconfig.WALLTIME,
+            'cores': Kconfig.PILOTSIZE,
+            'cpus': Kconfig.PILOTSIZE,
+            'cpu_processes': Kconfig.num_CUs_per_MD_replica,#PILOTSIZE,
+            'gpus': Kconfig.PILOTSIZE/16,
+            'project': Kconfig.ALLOCATION,
+            'queue': Kconfig.QUEUE,
+            'access_schema': 'gsissh'
+          }	  
+        else:
+          print("use_gpus not recognized")
+          
+        print res_dict
         # Create Resource Manager object with the above resource description
         rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
         rman.shared_data = [Kconfig.md_input_file,
                             Kconfig.md_run_file,
-                            Kconfig.lsdm_config_file,
-                            '%s/spliter.py' % Kconfig.helper_scripts,
-                            '%s/gro.py' % Kconfig.helper_scripts,
+                            #Kconfig.lsdm_config_file,
+                            '%s/spliter-tica.py' % Kconfig.helper_scripts,
+                            #'%s/gro.py' % Kconfig.helper_scripts,
                             #'%s/run.py' % Kconfig.helper_scripts,
                             #'%s/run_openmm.py' % Kconfig.helper_scripts,
                             #'%s/pre_analyze.py' % Kconfig.helper_scripts,
-                            '%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
-                            '%s/post_analyze.py' % Kconfig.helper_scripts,
+                            #'%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
+                            #'%s/post_analyze.py' % Kconfig.helper_scripts,
                             #'%s/selection.py' % Kconfig.helper_scripts,
-                            '%s/selection-cluster.py' % Kconfig.helper_scripts,
-                            '%s/reweighting.py' % Kconfig.helper_scripts
+                            #'%s/selection-cluster.py' % Kconfig.helper_scripts,
+                            #'%s/reweighting.py' % Kconfig.helper_scripts
                             ]
 
         #if Kconfig.ndx_file is not None:
         #    rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager, only one extasy script on one rabbit-mq server now
-        appman = AppManager()#port=args.port)
+        appman = AppManager(hostname='two.radical-project.org', port=33134)#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
 
         # Assign resource manager to the Application Manager
