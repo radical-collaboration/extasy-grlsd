@@ -213,7 +213,7 @@ def create_workflow(Kconfig):
         post_ana_task._name      = 'post_ana_task'
         if Kconfig.restarts == 'clustering':
           post_ana_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
-'export tasks=post_ana',
+'export tasks=post_ana','export PYEMMA_NJOBS=1',
                                     'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1'   ]
           post_ana_task.executable = ['python']
           post_ana_task.arguments = [ 'post_analyze.py',                                   
@@ -258,7 +258,10 @@ def create_workflow(Kconfig):
                                      'out.gro > %s/iter_%s/out.gro' % (combined_path,cur_iter),
                                      'plot-scatter-cluster-10d.png > %s/iter_%s/plot-scatter-cluster-10d.png' % (combined_path,cur_iter),
                                      'plot-scatter-cluster-10d-counts.png > %s/iter_%s/plot-scatter-cluster-10d-counts.png' % (combined_path,cur_iter),
-                                     'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter)]
+                                     'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter),
+                                     'plot-scatter-cluster-10d.png > ./results/iter_%s_plot-scatter-cluster-10d.png' % cur_iter,
+                                     'plot-scatter-cluster-10d-counts.png > ./results/iter_%s_plot-scatter-cluster-10d-counts.png' % cur_iter,
+                                     'plot-scatter-cluster-10d-ncopiess.png > ./results/iter_%s_plot-scatter-cluster-10d-ncopiess.png' % cur_iter]
 
         post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
