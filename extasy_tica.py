@@ -33,24 +33,22 @@ def create_workflow(Kconfig):
     	restart_iter=cur_iter
 
 
-    if cur_iter==0:
-      pre_proc_stage = Stage()
-      pre_proc_task = Task()
-      pre_proc_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
-                                     'export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
-                                ]
-      pre_proc_task.executable = ['python']
-      pre_proc_task.arguments = [ 'spliter-tica.py','--path', combined_path,  '--gro',
-                                  'input.gro','--clone',str(Kconfig.num_replicas)
-                              ]
-      pre_proc_task.copy_input_data = [#'$SHARED/%s > %s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path),
-                                       '$SHARED/spliter-tica.py > spliter-tica.py',
-                                       '$SHARED/%s > %s/input.gro' % (Kconfig.md_input_file, combined_path)]
-
-                                       
-      pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
-      pre_proc_stage.add_tasks(pre_proc_task)
-      wf.add_stages(pre_proc_stage)
+    #if cur_iter==0:
+    #  pre_proc_stage = Stage()
+    #  pre_proc_task = Task()
+    #  pre_proc_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+    #                                 'export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
+    #                            ]
+    #  pre_proc_task.executable = ['python']
+    #  pre_proc_task.arguments = [ 'spliter-tica.py','--path', combined_path,  '--gro',
+    #                              'input.gro','--clone',str(Kconfig.num_replicas)
+    #                          ]
+    #  pre_proc_task.copy_input_data = [#'$SHARED/%s > %s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path),
+    #                                   '$SHARED/spliter-tica.py > spliter-tica.py',
+    #                                   '$SHARED/%s > %s/input.gro' % (Kconfig.md_input_file, combined_path)]                                  
+    #  pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
+    #  pre_proc_stage.add_tasks(pre_proc_task)
+    #  wf.add_stages(pre_proc_stage)
       # ------------------------------------------------------------------------------------------------------------------
     
     while(cur_iter <  int(Kconfig.num_iterations)):
@@ -94,8 +92,14 @@ def create_workflow(Kconfig):
                                   '--trajstride', '10', '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
                                   '--path',combined_path,'--iter',str(cur_iter),
                                   '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
-          sim_task.link_input_data = ['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
-
+          link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
+          copy_arr=[]
+          if cur_iter==0:
+            for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
+              copy_arr=copy_arr+['$SHARED/%s > %s/iter0_input%s.pdb' % (Kconfig.md_input_file, combined_path, idx)]           
+          sim_task.link_input_data = link_arr
+          sim_task.copy_input_data = copy_arr
+          
             #if Kconfig.ndx_file is not None:
             #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
             
