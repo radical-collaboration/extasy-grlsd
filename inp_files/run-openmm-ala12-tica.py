@@ -8,6 +8,7 @@ import mdtraj.reporters
 
 from datetime import datetime
 import argparse
+import glob
 
 platformNames = [Platform.getPlatform(i).getName() for i in range(Platform.getNumPlatforms())]
 print(platformNames)

@@ -100,7 +100,12 @@ def create_workflow(Kconfig):
               copy_arr=copy_arr+['$SHARED/%s > %s/iter0_input%s.pdb' % (Kconfig.md_input_file, combined_path, idx)]           
           sim_task.link_input_data = link_arr #+ copy_arr
           sim_task.copy_input_data = copy_arr
-          
+          if str(Kconfig.strategy)=='extend':
+            copy_out=[]
+            for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
+              #copy_arr=copy_arr+['$SHARED/%s > iter0_input%s.pdb' % (Kconfig.md_input_file, idx)]
+              copy_out=copy_out+['%s/iter%s_out%s.pdb > %s/iter%s_input%s.pdb' % (combined_path, cur_iter, idx, combined_path, (cur_iter+1), idx)]
+            sim_task.copy_output_data = copy_out  
             #if Kconfig.ndx_file is not None:
             #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
             
@@ -117,25 +122,25 @@ def create_workflow(Kconfig):
         #                 Concatenate such files from each of the gromacs instances to form a larger file.
         #     Arguments:
         #             numCUs = number of simulation instances / number of small files to be concatenated
-
-        pre_ana_stage = Stage()
-        pre_ana_task = Task()
-        pre_ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
+        if str(Kconfig.strategy)!='extend':
+          pre_ana_stage = Stage()
+          pre_ana_task = Task()
+          pre_ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
                                     'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
-        pre_ana_task.executable = ['python']
-        pre_ana_task.arguments = ['pre_analyze_openmm.py']
+          pre_ana_task.executable = ['python']
+          pre_ana_task.arguments = ['pre_analyze_openmm.py']
 
-        pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
-        
-        for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
+          pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
+          
+          for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
             pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
-        pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
+          pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
                                          'tmp.gro > %s/iter_%s/tmp.gro' % (combined_path,cur_iter)]
                                          #'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter
 
-        pre_ana_stage.add_tasks(pre_ana_task)
-        wf.add_stages(pre_ana_stage)
+          pre_ana_stage.add_tasks(pre_ana_task)
+          wf.add_stages(pre_ana_stage)
         # --------------------------------------------------------------------------------------------------------------
 
         # --------------------------------------------------------------------------------------------------------------
@@ -143,95 +148,7 @@ def create_workflow(Kconfig):
         #     Purpose: Perform LSDMap on the large coordinate file to generate weights and eigen values.
         #     Arguments:
         #             config = name of the config file to be used during LSDMap
-
-        ana_stage = Stage()
-        ana_task = Task()
-        ana_task.pre_exec = [   
-'module load PrgEnv-gnu','module unload bwpy', 'module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
- 'export tasks=lsdmap',
-'export iter=%s' % cur_iter,
-'export OMP_NUM_THREADS=1' ]
-        ana_task.executable = ['lsdmap'] #/u/sciteam/hruska/local/bin/lsdmap
-        ana_task.arguments = ['-f', os.path.basename(Kconfig.lsdm_config_file),
-                              '-c', 'tmpha.gro',
-                              '-n', 'out.nn',
-                              '-w', 'weight.w'
-                              ]
-
-        ana_task.cores = 1
-        ana_task.link_input_data = ['$SHARED/{0} > {0}'.format(os.path.basename(Kconfig.lsdm_config_file)),
-                                    '%s/iter_%s/tmpha.gro > tmpha.gro' % (combined_path,cur_iter)]
-        ana_task.copy_output_data = ['tmpha.ev > $SHARED/iter_%s/tmpha.ev' % cur_iter,
-                                     'tmpha.eg > $SHARED/iter_%s/tmpha.eg' % cur_iter,
-                                     'lsdmap.log > output/iter_%s/lsdmap.log'%cur_iter,
-                                     'tmpha.ev > %s/iter_%s/tmpha.ev' % (combined_path,cur_iter),
-                                     'tmpha.eps > %s/iter_%s/tmpha.eps' % (combined_path,cur_iter),
-                                     'tmpha.eg > %s/iter_%s/tmpha.eg' % (combined_path,cur_iter),
-                                     'out.nn > %s/iter_%s/out.nn' % (combined_path,cur_iter),
-                                     'lsdmap.log > %s/iter_%s/lsdmap.log' % (combined_path,cur_iter)
-                                     ]
-        if cur_iter > 0:
-            ana_task.link_input_data += ['%s/iter_%s/weight_out.w > weight.w' % (combined_path,cur_iter-1)]
-
-        if(cur_iter % Kconfig.nsave == 0):
-            ana_task.download_output_data = ['lsdmap.log > output/iter_%s/lsdmap.log' % cur_iter]
-
-        ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
-
-        
-        ana_stage.add_tasks(ana_task)
-        wf.add_stages(ana_stage)
-        # --------------------------------------------------------------------------------------------------------------
-
-        # --------------------------------------------------------------------------------------------------------------
-        # post_lsdmap:
-        #     Purpose:   Use the weights, eigen values generated in lsdmap along with other parameter files from pre_loop
-        #                 to generate the new coordinate file to be used by the simulation_step in the next iteration.
-        #     Arguments:
-        #             num_replicas              = number of configurations to be generated in the new coordinate file
-        #             out                   = output filename
-        #             cycle                 = iteration number
-        #             max_dead_neighbors    = max dead neighbors to be considered
-        #             max_alive_neighbors   = max alive neighbors to be considered
-        #             numCUs                = number of simulation instances/ number of smaller files
-
-        post_ana_stage = Stage()
-        post_ana_task = Task()
-        post_ana_task._name      = 'post_ana_task'
-        if Kconfig.restarts == 'clustering':
-          post_ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module add bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan, xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 
-'export tasks=post_ana',
-                                    'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1'   ]
-          post_ana_task.executable = ['python']
-          post_ana_task.arguments = [ 'post_analyze.py',                                   
-                                    Kconfig.num_replicas,
-                                    'tmpha.ev',
-                                    'ncopies.nc',
-                                    'tmp.gro',
-                                    'out.nn',
-                                    'weight.w',
-                                    'out.gro',
-                                    Kconfig.max_alive_neighbors,
-                                    Kconfig.max_dead_neighbors,
-                                    'input.gro',
-                                    cur_iter,
-                                    Kconfig.num_parallel_MD_sim,
-                                    'weight_out.w',
-                                    'tmpha.eg']
-
-          post_ana_task.link_input_data = ['$SHARED/post_analyze.py > post_analyze.py',
-                                         '$SHARED/selection.py > selection.py',
-                                         '$SHARED/selection-cluster.py > selection-cluster.py',
-                                         '$SHARED/reweighting.py > reweighting.py',
-                                         '$SHARED/spliter.py > spliter.py',
-                                         '$SHARED/gro.py > gro.py',
-                                         '%s/iter_%s/weight_out.w > weight.w' % (combined_path,cur_iter-1),
-                                         '%s/iter_%s/tmp.gro > tmp.gro' % (combined_path,cur_iter),
-                                         '%s/iter_%s/tmpha.ev > tmpha.ev' % (combined_path,cur_iter),
-                                         '%s/iter_%s/tmpha.eg > tmpha.eg' % (combined_path,cur_iter),
-                                         '%s/iter_%s/out.nn > out.nn' % (combined_path,cur_iter)]
-
-
+          
           if(cur_iter % Kconfig.nsave == 0):
                post_ana_task.download_output_data = ['out.gro > output/iter_%s/out.gro' % cur_iter,
                                              'weight_out.w > output/iter_%s/weight_out.w' % cur_iter,
@@ -247,10 +164,10 @@ def create_workflow(Kconfig):
                                      'plot-scatter-cluster-10d-counts.png > %s/iter_%s/plot-scatter-cluster-10d-counts.png' % (combined_path,cur_iter),
                                      'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter)]
 
-        post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
+          post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
-        post_ana_stage.add_tasks(post_ana_task)
-        wf.add_stages(post_ana_stage)
+          post_ana_stage.add_tasks(post_ana_task)
+          wf.add_stages(post_ana_stage)
         # --------------------------------------------------------------------------------------------------------------
 
         cur_iter += 1
