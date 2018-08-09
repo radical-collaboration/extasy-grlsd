@@ -29,7 +29,7 @@ trajstride              = 10
 #--------------------------Analysis----------------------------------
 
 helper_scripts          = './helper_scripts'
-strategy                = 'inv_cmicro'
+strategy                = 'extend'
 #strategy                = '1/C'
 
 #obsolete

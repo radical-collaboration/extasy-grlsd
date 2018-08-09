@@ -123,24 +123,25 @@ def create_workflow(Kconfig):
         #     Arguments:
         #             numCUs = number of simulation instances / number of small files to be concatenated
         if str(Kconfig.strategy)!='extend':
-          pre_ana_stage = Stage()
-          pre_ana_task = Task()
-          pre_ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=pre_ana',
+          ana_stage = Stage()
+          ana_task = Task()
+          ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=tica_msm_ana',
                                     'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
-          pre_ana_task.executable = ['python']
-          pre_ana_task.arguments = ['pre_analyze_openmm.py']
+          ana_task.executable = ['python']
+          ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--nselect', str(num_replicas),'--iter',str(cur_iter),]
 
-          pre_ana_task.link_input_data = ['$SHARED/pre_analyze_openmm.py > pre_analyze_openmm.py']
+          ana_task.link_input_data = ['$SHARED/run-tica-msm.py > run-tica-msm.py']
           
-          for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
-            pre_ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
+          #for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
+          #  ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
 
-          pre_ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
-                                         'tmp.gro > %s/iter_%s/tmp.gro' % (combined_path,cur_iter)]
+          #ana_task.copy_output_data = ['tmpha.gro > %s/iter_%s/tmpha.gro' % (combined_path,cur_iter),
+           #                              'tmp.gro > %s/iter_%s/tmp.gro' % (combined_path,cur_iter)]
                                          #'tmp.gro > resource://iter_%s/tmp.gro' % cur_iter
 
-          pre_ana_stage.add_tasks(pre_ana_task)
-          wf.add_stages(pre_ana_stage)
+          ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, ana_stage.uid, ana_task.uid)
+          ana_stage.add_tasks(ana_task)
+          wf.add_stages(ana_stage)
         # --------------------------------------------------------------------------------------------------------------
 
         # --------------------------------------------------------------------------------------------------------------
@@ -149,25 +150,25 @@ def create_workflow(Kconfig):
         #     Arguments:
         #             config = name of the config file to be used during LSDMap
           
-          if(cur_iter % Kconfig.nsave == 0):
-               post_ana_task.download_output_data = ['out.gro > output/iter_%s/out.gro' % cur_iter,
-                                             'weight_out.w > output/iter_%s/weight_out.w' % cur_iter,
-                                             'plot-scatter-cluster-10d.png > output/iter_%s/plot-scatter-cluster-10d.png' % (cur_iter),
-                                             'ncopies.nc > output/iter_%s/ncopies.nc' % (cur_iter),
-                                             '%s/iter_%s/tmp.gro > output/iter_%s/tmp.gro' % (combined_path,cur_iter,cur_iter) 
-                                             ]
+          #if(cur_iter % Kconfig.nsave == 0):
+          #     post_ana_task.download_output_data = ['out.gro > output/iter_%s/out.gro' % cur_iter,
+          #                                   'weight_out.w > output/iter_%s/weight_out.w' % cur_iter,
+          #                                   'plot-scatter-cluster-10d.png > output/iter_%s/plot-scatter-cluster-10d.png' % (cur_iter),
+          #                                   'ncopies.nc > output/iter_%s/ncopies.nc' % (cur_iter),
+          #                                   '%s/iter_%s/tmp.gro > output/iter_%s/tmp.gro' % (combined_path,cur_iter,cur_iter) 
+          #                                   ]
 
-          post_ana_task.copy_output_data = ['ncopies.nc > %s/iter_%s/ncopies.nc' % (combined_path,cur_iter),
-                                     'weight_out.w > %s/iter_%s/weight_out.w' % (combined_path,cur_iter),
-                                     'out.gro > %s/iter_%s/out.gro' % (combined_path,cur_iter),
-                                     'plot-scatter-cluster-10d.png > %s/iter_%s/plot-scatter-cluster-10d.png' % (combined_path,cur_iter),
-                                     'plot-scatter-cluster-10d-counts.png > %s/iter_%s/plot-scatter-cluster-10d-counts.png' % (combined_path,cur_iter),
-                                     'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter)]
+          #post_ana_task.copy_output_data = ['ncopies.nc > %s/iter_%s/ncopies.nc' % (combined_path,cur_iter),
+          #                           'weight_out.w > %s/iter_%s/weight_out.w' % (combined_path,cur_iter),
+          #                           'out.gro > %s/iter_%s/out.gro' % (combined_path,cur_iter),
+          #                           'plot-scatter-cluster-10d.png > %s/iter_%s/plot-scatter-cluster-10d.png' % (combined_path,cur_iter),
+          #                           'plot-scatter-cluster-10d-counts.png > %s/iter_%s/plot-scatter-cluster-10d-counts.png' % (combined_path,cur_iter),
+          #                           'plot-scatter-cluster-10d-ncopiess.png > %s/iter_%s/plot-scatter-cluster-10d-ncopiess.png' % (combined_path,cur_iter)]
 
-          post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
+          #post_ana_task_ref = '$Pipeline_%s_Stage_%s_Task_%s'%(wf.uid, post_ana_stage.uid, post_ana_task.uid)
 
-          post_ana_stage.add_tasks(post_ana_task)
-          wf.add_stages(post_ana_stage)
+          #post_ana_stage.add_tasks(post_ana_task)
+          #wf.add_stages(post_ana_stage)
         # --------------------------------------------------------------------------------------------------------------
 
         cur_iter += 1
@@ -229,8 +230,8 @@ if __name__ == '__main__':
         rman.shared_data = [Kconfig.md_dir+Kconfig.md_input_file,
                             Kconfig.md_dir+Kconfig.md_run_file,
                             #Kconfig.lsdm_config_file,
-                            '%s/spliter-tica.py' % Kconfig.helper_scripts,
-                            #'%s/gro.py' % Kconfig.helper_scripts,
+                            #'%s/spliter-tica.py' % Kconfig.helper_scripts,
+                            '%s/run-tica-msm.py' % Kconfig.helper_scripts,
                             #'%s/run.py' % Kconfig.helper_scripts,
                             #'%s/run_openmm.py' % Kconfig.helper_scripts,
                             #'%s/pre_analyze.py' % Kconfig.helper_scripts,
