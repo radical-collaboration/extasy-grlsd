@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import glob
 import mdtraj as md
-
+import imp
 
 class Runticamsm(object):
     """
@@ -36,6 +36,11 @@ class Runticamsm(object):
            type=int,
            dest="n_select",
            required=True)
+        
+	parser.add_argument("--Kconfig",
+           type=str,
+           dest="Kconfig",
+           required=True)
 
         return parser
 
@@ -43,6 +48,15 @@ class Runticamsm(object):
         parser = self.create_arg_parser()
         args = parser.parse_args()
         
+	
+	#parser = argparse.ArgumentParser()
+        #parser.add_argument('--Kconfig', help='link to Kernel configurations file')
+        #parser.add_argument('--port', dest="port", help='port for RabbitMQ server', default=5672, type=int)
+        #args = parser.parse_args()
+
+        Kconfig = imp.load_source('Kconfig', args.Kconfig)
+
+
         pdb_file=glob.glob(args.path+'/iter*_input*.pdb')[0]
         #pdb_file=glob.glob('iter*_input*.pdb')[0]
         traj_files=glob.glob(args.path+'/iter*_traj*.dcd')
@@ -57,7 +71,7 @@ class Runticamsm(object):
         inp = pyemma.coordinates.source(traj_files, featurizer)
         #inp.get_output()
 
-        tica_lag=1
+        tica_lag=Kconfig.tica_lag#1
         tica_dim=10
         tica_stride=1
 
@@ -66,9 +80,9 @@ class Runticamsm(object):
         y = tica_obj.get_output()
         #y[0].shape
 
-        msm_states=100
+        msm_states=Kconfig.msm_states
         msm_stride=1
-        msm_lag=1
+        msm_lag=Kconfig.msm_lag#1
         cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=50, stride=msm_stride)
         
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
@@ -82,33 +96,41 @@ class Runticamsm(object):
 
 
 
-        topfile.n_atoms
-        inp.n_frames_total()
-        inp.number_of_trajectories()
-        inp.trajectory_lengths()
-        inp.dimension()
+        print("n atoms",topfile.n_atoms)
+        print("n frames total",inp.n_frames_total())
+        print("n trajs",inp.number_of_trajectories())
+        print(" traj lengths", inp.trajectory_lengths())
+        print(" input dimension",inp.dimension())
 
-        tica_obj.eigenvalues
-        tica_obj.eigenvectors
+        print("TICA eigenvalues", tica_obj.eigenvalues)
+        #print(tica_obj.eigenvectors)
 
-        m.eigenvalues(10)
-        m.eigenvectors_left(10)
-        m.eigenvectors_right(10)
-        m.P  #only connected
+        print("MSM eigenvalues",m.eigenvalues(10))
+        #print(m.eigenvectors_left(10))
+        #print(m.eigenvectors_right(10))
+        print("MSM P connected",m.P)  #only connected
 
-        cl.clustercenters
+        print("MSM clustercenters",cl.clustercenters)
 
         c = m.count_matrix_full
         s =  np.sum(c, axis=1)
-        print(s)
-        if 0 not in s:
-            q = 1.0 / s
+        print("count matrix sums",s)
+
+	if Kconfig.strategy=='cmicro':
+          if 0 not in s:
+              q = 1.0 / s
+
+        elif Kconfig.strategy=='cmacro':
+           q = s
+
+	else:
+ 	  print('ERROR strategy not recognized')
 
         n_states=c.shape[0]
 
         dtrajs = [ t for t in cl.dtrajs ]
 
-
+        print("msm dtrajs", dtrajs)
         #get frame_list 
 
 

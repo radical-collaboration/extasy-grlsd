@@ -14,9 +14,9 @@ import sys
 import imp
 import json
 import traceback
+import time
 
-
-def create_workflow(Kconfig):
+def create_workflow(Kconfig,args):
 
 
     wf = Pipeline()
@@ -25,30 +25,28 @@ def create_workflow(Kconfig):
     cur_iter = int(Kconfig.start_iter)#0
     #assumed of iteration non zero that files are in combined_path
     combined_path=str(Kconfig.remote_output_directory)  #'/u/sciteam/hruska/scratch/extasy-tica'
-    num_parallel=int(Kconfig.num_parallel_MD_sim)
+    num_parallel=int(Kconfig.NODESIZE)
     num_replicas=int(Kconfig.num_replicas)
-    if cur_iter==0:
-    	restart_iter=0
-    else:
-    	restart_iter=cur_iter
-
-
     #if cur_iter==0:
-    #  pre_proc_stage = Stage()
-    #  pre_proc_task = Task()
-    #  pre_proc_task.pre_exec = [ 'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
-    #                                 'export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
-    #                            ]
-    #  pre_proc_task.executable = ['python']
-    #  pre_proc_task.arguments = [ 'spliter-tica.py','--path', combined_path,  '--gro',
-    #                              'input.gro','--clone',str(Kconfig.num_replicas)
-    #                          ]
-    #  pre_proc_task.copy_input_data = [#'$SHARED/%s > %s/input.gro' % (os.path.basename(Kconfig.md_input_file),combined_path),
-    #                                   '$SHARED/spliter-tica.py > spliter-tica.py',
-    #                                   '$SHARED/%s > %s/input.gro' % (Kconfig.md_input_file, combined_path)]                                  
-    #  pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
-    #  pre_proc_stage.add_tasks(pre_proc_task)
-    #  wf.add_stages(pre_proc_stage)
+    #	restart_iter=0
+    #else:
+    #	restart_iter=cur_iter
+
+
+    if cur_iter==0:
+      pre_proc_stage = Stage()
+      pre_proc_task = Task()
+      pre_proc_task.pre_exec = ['export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
+                                ]
+      pre_proc_task.executable = ['mv']
+      pre_proc_task.arguments = [ combined_path, combined_path + time.strftime("%Y-%m-%d-%H-%M")
+                              ]
+      pre_proc_task.copy_out_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
+                                     '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
+                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)]                                  
+      pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
+      pre_proc_stage.add_tasks(pre_proc_task)
+      wf.add_stages(pre_proc_stage)
       # ------------------------------------------------------------------------------------------------------------------
     
     while(cur_iter <  int(Kconfig.num_iterations)):
@@ -64,7 +62,7 @@ def create_workflow(Kconfig):
 
         sim_stage = Stage()
         sim_task_ref = list()
-        def_rep_per_thread=int(num_replicas/num_parallel)
+        def_rep_per_thread=int(num_replicas/num_parallel)+1
         num_allocated_rep=0
         num_used_threads=0
         while(num_allocated_rep<num_replicas):
@@ -76,16 +74,20 @@ def create_workflow(Kconfig):
              use_replicas=(num_replicas-num_allocated_rep)
           sim_task = Task()
           sim_task.executable = ['python']
-          sim_task.pre_exec = [  'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
+          
+	  pre_exec_arr = [  'module unload PrgEnv-cray', 'module load PrgEnv-gnu','module unload bwpy','module load bwpy','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate',
                                      'export tasks=md','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
+          #if cur_iter==0 and num_allocated_rep==0:
+          #  pre_exec_arr = pre_exec_arr + [ 'mv %s']
+          sim_task.pre_exec = pre_exec_arr
           sim_task.gpu_reqs = { 'processes': 1,
                                     'process_type': None,
                                     'threads_per_process': 1,
                                     'thread_type': None
                                 }
-          sim_task.cpu_reqs = { 'processes': 0, 
+          sim_task.cpu_reqs = { 'processes': 1, 
                                     'process_type': None, 
-                                    'threads_per_process': 0, 
+                                    'threads_per_process': 1, 
                                     'thread_type': None
                                   }
           sim_task.arguments = ['run_openmm.py',
@@ -98,6 +100,8 @@ def create_workflow(Kconfig):
             for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
               #copy_arr=copy_arr+['$SHARED/%s > iter0_input%s.pdb' % (Kconfig.md_input_file, idx)]
               copy_arr=copy_arr+['$SHARED/%s > %s/iter0_input%s.pdb' % (Kconfig.md_input_file, combined_path, idx)]           
+          #if cur_iter==0 and num_allocated_rep==0:
+          #   copy_arr = copy_arr +['$SHARED/%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig)]
           sim_task.link_input_data = link_arr #+ copy_arr
           sim_task.copy_input_data = copy_arr
           if str(Kconfig.strategy)=='extend':
@@ -128,7 +132,7 @@ def create_workflow(Kconfig):
           ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=tica_msm_ana',
                                    'export PYEMMA_NJOBS=1', 'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
           ana_task.executable = ['python']
-          ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter),]
+          ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '>', 'analyse.log']
 
           ana_task.cpu_reqs = { 'processes': 1,
                                     'process_type': None,
@@ -136,7 +140,7 @@ def create_workflow(Kconfig):
                                     'thread_type': None
                                   }
 
-          ana_task.link_input_data = ['$SHARED/run-tica-msm.py > run-tica-msm.py']
+          ana_task.link_input_data = ['$SHARED/run-tica-msm.py > run-tica-msm.py', '$SHARED/%s > %s'%(args.Kconfig,args.Kconfig)]
           
           #for sim_num in range(min(int(Kconfig.num_parallel_MD_sim),int(Kconfig.num_replicas))):
           #  ana_task.link_input_data += ['%s/out.gro > out%s.gro' % (sim_task_ref[sim_num], sim_num)]
@@ -199,8 +203,8 @@ if __name__ == '__main__':
             sys.exit(0)
 
         Kconfig = imp.load_source('Kconfig', args.Kconfig)
-
-        wf = create_workflow(Kconfig)
+        combined_path=str(Kconfig.remote_output_directory)
+        wf = create_workflow(Kconfig, args)
 
         # Create a dictionary describe four mandatory keys:
         # resource, walltime, cores and project
@@ -218,10 +222,10 @@ if __name__ == '__main__':
           res_dict = {
             'resource': Kconfig.REMOTE_HOST,
             'walltime': Kconfig.WALLTIME,
-            'cores': Kconfig.PILOTSIZE,
-            'cpus': Kconfig.PILOTSIZE,
-            'cpu_processes': Kconfig.num_CUs_per_MD_replica,#PILOTSIZE,
-            'gpus': Kconfig.PILOTSIZE/16,
+            #'cores': Kconfig.PILOTSIZE,
+            'cpus': Kconfig.NODESIZE*Kconfig.CPUs_per_NODE,
+            #'cpu_processes': Kconfig.num_CUs_per_MD_replica,#PILOTSIZE,
+            'gpus': Kconfig.NODESIZE,
             'project': Kconfig.ALLOCATION,
             'queue': Kconfig.QUEUE,
             'access_schema': 'gsissh'
@@ -235,6 +239,8 @@ if __name__ == '__main__':
         # Data common to multiple tasks -- transferred only once to common staging area
         rman.shared_data = [Kconfig.md_dir+Kconfig.md_input_file,
                             Kconfig.md_dir+Kconfig.md_run_file,
+			    args.Kconfig,
+			    #'%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig),
                             #Kconfig.lsdm_config_file,
                             #'%s/spliter-tica.py' % Kconfig.helper_scripts,
                             '%s/run-tica-msm.py' % Kconfig.helper_scripts,

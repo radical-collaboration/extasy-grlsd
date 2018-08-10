@@ -31,7 +31,7 @@ args = parser.parse_args()
 print("num of structures:",str(args.idxend-args.idxstart))
 print("found num:", str(len(glob.glob(args.path+'/iter'+str(args.iter)+'_input*.pdb')))) 
 for i in range(args.idxstart,args.idxend):
-        print("pdb # "+str(i))
+        print("pdb "+str(i)+" from "+ str(args.idxend))
         pdb=mdtraj.load(args.path+'/iter'+str(args.iter)+'_input'+str(i)+'.pdb') 
 	topology = pdb.topology.to_openmm()
 	#implicit forcefield
