@@ -6,10 +6,13 @@ import numpy as np
 import pyemma
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import glob
 import mdtraj as md
 import imp
+from matplotlib.pyplot import *
+from pyemma import plots
+matplotlib.rcParams.update({'font.size': 14})
+print("pyemma version",pyemma.__version__)
 
 class Runticamsm(object):
     """
@@ -111,6 +114,14 @@ class Runticamsm(object):
         print("MSM P connected",m.P)  #only connected
 
         print("MSM clustercenters",cl.clustercenters)
+        
+        print("TICA timescales",tica_obj.timescales)
+        print("MSM timescales", m.timescales(10))
+        print("MSM stat", m.stationary_distribution)
+        print("MSM active set", m.active_set)
+        print('fraction of states used = ', m.active_state_fraction)
+        print('fraction of counts used = ', m.active_count_fraction)
+
 
         c = m.count_matrix_full
         s =  np.sum(c, axis=1)
@@ -209,7 +220,11 @@ class Runticamsm(object):
         q_arr=np.array(q_arr)
         print("Q values", q_arr.min(), q_arr.max(), q_arr)
 
-
+        tica0=np.array([])
+        tica1=np.array([])
+        for i in range(len(y)):
+          tica0=np.append(tica0,y[i][:,0])
+          tica1=np.append(tica1,y[i][:,1])
 
 if __name__ == '__main__':
     Runticamsm().run()

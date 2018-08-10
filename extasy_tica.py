@@ -85,9 +85,9 @@ def create_workflow(Kconfig,args):
                                     'threads_per_process': 1,
                                     'thread_type': None
                                 }
-          sim_task.cpu_reqs = { 'processes': 1, 
+          sim_task.cpu_reqs = { 'processes': 0, 
                                     'process_type': None, 
-                                    'threads_per_process': 1, 
+                                    'threads_per_process': 0, 
                                     'thread_type': None
                                   }
           sim_task.arguments = ['run_openmm.py',
