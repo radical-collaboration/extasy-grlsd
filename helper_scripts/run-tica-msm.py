@@ -94,8 +94,11 @@ class Runticamsm(object):
         tica_lag=Kconfig.tica_lag#1
         tica_dim=10
         tica_stride=1
-
-        tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride)
+        if Kconfig.koopman=='yes':
+          tica_weights='koopman'
+	else:
+          tica_weights='empirical'
+        tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights=tica_weights)
 
         y = tica_obj.get_output()
         #y[0].shape
