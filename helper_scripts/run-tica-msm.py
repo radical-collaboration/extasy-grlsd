@@ -123,7 +123,7 @@ class Runticamsm(object):
         #print(m.eigenvectors_right(10))
         print("MSM P connected",m.P)  #only connected
 
-        print("MSM clustercenters",cl.clustercenters)
+        #print("MSM clustercenters",cl.clustercenters)
         
         print("TICA timescales",tica_obj.timescales)
         print("MSM timescales", m.timescales(10))
@@ -151,10 +151,9 @@ class Runticamsm(object):
 
         dtrajs = [ t for t in cl.dtrajs ]
 
-        print("msm dtrajs", dtrajs)
-        #get frame_list 
+        #print("msm dtrajs", dtrajs)
 
-
+        #get frame_list for each msm state
         frame_state_list = {n: [] for n in range(n_states)}
         for nn, dt in enumerate(dtrajs):
             for mm, state in enumerate(dt):
@@ -247,7 +246,7 @@ class Runticamsm(object):
         ax.set_ylabel('TICA Timescales (steps)')
         ax.set_xlabel('# TICA eigenvector')
         ax.set_yscale('log')
-        savefig(args.path+'/plot_iter9_tica_timescales.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_timescales.png', bbox_inches='tight', dpi=200)
 
         cumvar = np.cumsum(tica_obj.timescales)
         cumvar /= cumvar[-1]
@@ -261,7 +260,7 @@ class Runticamsm(object):
 
         xlabel('Eigenvalue Number', fontsize = 16)
         ylabel('cumulative kinetic content', fontsize = 16)
-        savefig(args.path+'/plot_iter9_tica_cumulative_kinetic_content.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_cumulative_kinetic_content.png', bbox_inches='tight', dpi=200)
 
         msm_timescales=m.timescales(100)
         clf()
@@ -271,7 +270,7 @@ class Runticamsm(object):
         ax.set_ylabel('MSM Timescales (steps)')
         ax.set_xlabel('# MSM eigenvector')
         ax.set_yscale('log')
-        savefig(args.path+'/plot_iter9_msm_timescales.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_timescales.png', bbox_inches='tight', dpi=200)
 
         cumvar = np.cumsum(m.timescales(100))
         cumvar /= cumvar[-1]
@@ -285,7 +284,7 @@ class Runticamsm(object):
 
         xlabel('Eigenvalue Number', fontsize = 16)
         ylabel('cumulative kinetic content', fontsize = 16)
-        savefig(args.path+'/plot_iter9_msm_cumulative_kinetic_content.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_cumulative_kinetic_content.png', bbox_inches='tight', dpi=200)
 
 
 
@@ -295,14 +294,14 @@ class Runticamsm(object):
         xlabel("TICA ev0")
         ylabel("TICA ev1")
         cp = scatter(tica0, tica1, s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
-        savefig(args.path+'/plot_iter9_tica_evs.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs.png', bbox_inches='tight', dpi=200)
 
 
         clf()
         xlabel("TICA ev0")
         ylabel("TICA ev1")
         fig, ax = plots.plot_free_energy(tica0, tica1,cmap='Spectral')
-        savefig(args.path+'/plot_iter9_tica_evs2.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs2.png', bbox_inches='tight', dpi=200)
 
         clf()
         xlabel("TICA ev0")
@@ -310,40 +309,40 @@ class Runticamsm(object):
         fig, ax = plots.plot_free_energy(tica0, tica1,cmap='Spectral')
         cp = scatter(cl.clustercenters[:,0], cl.clustercenters[:,1], s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM state centers')
         legend()
-        savefig(args.path+'/plot_iter9_tica_evs3_centers.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs3_centers.png', bbox_inches='tight', dpi=200)
 
         #plot msm ev
         clf()
         xlabel("MSM ev1")
         ylabel("MSM ev2")
         cp = scatter(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
-        savefig(args.path+'/plot_iter9_msm_evs.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs.png', bbox_inches='tight', dpi=200)
 
         #plot msm ev
         clf()
         xlabel("MSM ev1")
         ylabel("MSM ev2")
         fig, ax = plots.plot_free_energy(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], cmap='Spectral', weights=m.stationary_distribution)
-        savefig(args.path+'/plot_iter9_msm_evs2.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs2.png', bbox_inches='tight', dpi=200)
 
         clf()
         xlabel("RMSD")
         ylabel("Rg")
         cp = scatter(rmsd_arr, rg_arr, s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
-        savefig(args.path+'/plot_iter9_rgrmsd.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_rgrmsd.png', bbox_inches='tight', dpi=200)
 
         #plot msm ev
         clf()
         xlabel("RMSD")
         ylabel("Rg")
         fig, ax = plots.plot_free_energy(rmsd_arr, rg_arr, cmap='Spectral')
-        savefig(args.path+'/plot_iter9_rgrmsd2.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_rgrmsd2.png', bbox_inches='tight', dpi=200)
 
         clf()
         xlabel("Q")
         ylabel("Rg")
         cp = scatter(q_arr, rg_arr, s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
-        savefig(args.path+'/plot_iter9_qrg.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_qrg.png', bbox_inches='tight', dpi=200)
 
         #Q 1d free energy
         clf()
@@ -353,7 +352,7 @@ class Runticamsm(object):
         plot(x[1:], F)
         xlabel('Q', fontsize = 15)
         ylabel('Free Energy [kT]', fontsize =15)
-        savefig(args.path+'/plot_iter9_free_energy_q.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_free_energy_q.png', bbox_inches='tight', dpi=200)
 
         #MSM 1d free energy
         clf()
@@ -366,7 +365,7 @@ class Runticamsm(object):
         plot(x[1:], F)
         xlabel('MSM ev1', fontsize = 15)
         ylabel('Free Energy [kT]', fontsize =15)
-        savefig(args.path+'/plot_iter9_msm_free_energy.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_free_energy.png', bbox_inches='tight', dpi=200)
 
 
         #which tica frames seleted
@@ -384,7 +383,7 @@ class Runticamsm(object):
         cp = scatter(tica0, tica1, s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='all frames')
         cp = scatter(tica0_sel, tica1_sel, s=10, c='red', marker='o', linewidth=0.,cmap='jet', label='selected')
         legend()
-        savefig(args.path+'/plot_iter9_tica_evs4_selected.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs4_selected.png', bbox_inches='tight', dpi=200)
 
 
 
@@ -396,13 +395,13 @@ class Runticamsm(object):
 
         clf()
         pyemma.plots.plot_cktest(ck, diag=True, figsize=(7,7), layout=(2,2), padding_top=0.1, y01=False, padding_between=0.3, dt=0.1, units='ns')
-        savefig(args.path+'/plot_iter9_msm_cktest.png')
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_cktest.png')
 
         its = pyemma.msm.its(dtrajs, nits=10)
         clf()
         pyemma.plots.plot_implied_timescales(its, ylog=False, units='steps', linewidth=2)
         #xlim(0, 40); ylim(0, 120);
-        savefig(args.path+'/plot_iter9_msm_its.png')
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its.png')
 
 
 
@@ -427,7 +426,7 @@ class Runticamsm(object):
         cp = scatter(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
         cp = scatter(m.eigenvectors_right(10)[p_picks_active,1], m.eigenvectors_right(10)[p_picks_active,2], s=10, c='red', marker='o', linewidth=0.,cmap='jet', label='selected')
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        savefig(args.path+'/plot_iter9_msm_evs_4_select.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs_4_select.png', bbox_inches='tight', dpi=200)
 
 
 
@@ -451,7 +450,7 @@ class Runticamsm(object):
         ax.set_ylabel('# of current msm states explored')
         ax.set_xlabel('iteration')
         #ax.set_yscale('log')
-        savefig(args.path+'/plot_iter9_strategy.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_strategy.png', bbox_inches='tight', dpi=200)
 
 
         clf()
@@ -469,7 +468,7 @@ class Runticamsm(object):
             cp = scatter(tica0, tica1, s=10, marker='o', linewidth=0.,cmap='jet', label='iter '+str(p_iter))
 
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        savefig(args.path+'/plot_iter9_tica_evs5_iters.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs5_iters.png', bbox_inches='tight', dpi=200)
 
 
         clf()
@@ -490,7 +489,7 @@ class Runticamsm(object):
             cp = scatter(m.eigenvectors_right(10)[p_states_active,1], m.eigenvectors_right(10)[p_states_active,2], s=10,  marker='o', linewidth=0., cmap='spectral', label='iter '+str(p_iter))
 
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        savefig(args.path+'/plot_iter9_msm_evs_3_iter.png', bbox_inches='tight', dpi=200)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs_3_iter.png', bbox_inches='tight', dpi=200)
 
 
 

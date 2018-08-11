@@ -7,18 +7,15 @@
 ## Local python installation
 
 Make a new conda python2.7 installation:
-For CPU:
+For CPU or GPU:
 
 ```
 conda install -c conda-forge rabbitmq-server tmux pip git python=2.7.14
-git clone radical.utils, saga-python, radical.pilot radical.entk, radaical.analytics
+git clone radical.utils, saga-python, radical.pilot radical.entk, radical.analytics
 git checkout devel.
 git pull
 pip install .
 ```
-For GPU:
-
-same but for radical.pilot git checkout feature/gpu```
 
 check ``radical-stack```
 ### Alternative Docker installation
@@ -70,7 +67,7 @@ export GLOBUS_LOCATION='/usr/' #assuming gsissh is at /usr/bin/gsissh
 export RADICAL_ENTK_PROFILE=True
 export RADICAL_PILOT_PROFILE=True
 export SAGA_PTY_SSH_TIMEOUT=300
-export RADICAL_PILOT_DBURL='mongodb://eh22:a3Qv*zs0@ds141209.mlab.com:41209/clementigroup'
+export RADICAL_PILOT_DBURL='mongodb://...'
 ```
 
 Start the rabbitmq server
@@ -107,7 +104,7 @@ python extasy_grlsd.py --Kconfig settings_ala12-gpu.wcfg
 
 For PCU tica-extasy:
 
-python extasy_tica.py --Kconfig settings_ala12_tica.wcfg
+python extasy_tica.py --Kconfig settings_ala12_tica_gpu.wcfg
 
 ## Your own system
 The MD simulation is in openmm, you have to inp_files:

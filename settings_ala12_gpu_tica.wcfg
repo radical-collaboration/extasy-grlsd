@@ -11,7 +11,7 @@ use_gpus                = 'True'
 QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
 #--------------------------General--------------------------------
 
-WALLTIME                = 30    #120         # Walltime to be requested for the pilot in minutes
+WALLTIME                = 120    #120         # Walltime to be requested for the pilot in minutes
 NODESIZE                = 8
 num_replicas            = 100                 #total num replica
 num_parallel_MD_sim     = 8     #160           # Total Number of tasks or Compute Units
@@ -23,7 +23,7 @@ nsave                   = 1                    # number of iterations after whic
 remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica'   
 
 #--------------------------Simulation--------------------------------
-md_steps                = 10000    #1000=2sec each, 10000=20sec
+md_steps                = 20000    #1000=2sec each, 10000=20sec
 md_dir                  = './inp_files/'
 md_input_file           = 'input-ala12-single.pdb'        # Entire path to the MD Input file - Do not use $HOME or the likes
 md_run_file             = 'run-openmm-ala12-tica.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
@@ -35,7 +35,7 @@ strategy                = 'cmicro'
 #strategy                = 'extend'
 #strategy                = 'cmacro'
 tica_lag                = 10
-msm_states              = 100
+msm_states              = 300
 msm_lag                 = 10
 
 #obsolete
