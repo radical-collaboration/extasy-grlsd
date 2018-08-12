@@ -1,5 +1,6 @@
 import sys, os
 print(os.path.dirname(sys.executable))
+import time
 import os
 import argparse
 import numpy as np
@@ -48,6 +49,7 @@ class Runticamsm(object):
         return parser
 
     def run(self):
+        time_start=time.time()
         parser = self.create_arg_parser()
         args = parser.parse_args()
         
@@ -102,14 +104,14 @@ class Runticamsm(object):
 
         y = tica_obj.get_output()
         #y[0].shape
-
+        print('time tica finished', str(time.time()-time_start))
         msm_states=Kconfig.msm_states
         msm_stride=1
         msm_lag=Kconfig.msm_lag#1
         cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=50, stride=msm_stride)
         
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
-
+        print('time msm finished', str(time.time()-time_start))
 
 
         print("n atoms",topfile.n_atoms)
@@ -175,6 +177,7 @@ class Runticamsm(object):
 
         state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
 
+        print("selected msm restarts", state_picks)        
 
         picks = [
             frame_state_list[state][np.random.randint(0,
@@ -189,7 +192,7 @@ class Runticamsm(object):
         frame_select = [pick[1]*tica_stride*msm_stride for pick in picks]
         print('traj_select',traj_select)
         print('frame_select',traj_select)
-
+        print('time frame selection finished', str(time.time()-time_start))
         text_file = open(args.path + "/traj_select.txt", "w")
         for idx in range(n_pick):
           text_file.write(traj_select[idx]+' to iter '+str(args.cur_iter)+' idx '+str(idx)+' \n')
@@ -206,8 +209,9 @@ class Runticamsm(object):
           tmp.xyz[0,:,:]=files.xyz[frame_select[idx],:,:]
           tmp.save_pdb(args.path+'/iter'+str(args.cur_iter+1)+'_input'+str(idx)+'.pdb')
 
+        print('time writing new frames finished', str(time.time()-time_start))
         #rg rmsd
-
+ 
         original_file = md.load(args.path+'/iter0_input0.pdb')
         out_files=glob.glob(args.path+'/iter*_out*.pdb')
         out_files.sort()
@@ -232,7 +236,7 @@ class Runticamsm(object):
         q_arr=np.array(q_arr)
         print("Q values", q_arr.min(), q_arr.max(), q_arr)
 
-
+        
         ########################################
 
         tica0=np.array([])
@@ -493,7 +497,8 @@ class Runticamsm(object):
 
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs_3_iter.png', bbox_inches='tight', dpi=200)
-
+        
+        print('time plotting finished', str(time.time()-time_start))
 
 
 if __name__ == '__main__':
