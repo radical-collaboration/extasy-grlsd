@@ -130,13 +130,13 @@ def create_workflow(Kconfig,args):
           ana_stage = Stage()
           ana_task = Task()
           ana_task.pre_exec = [ 'module unload PrgEnv-cray','module load PrgEnv-gnu','module unload bwpy','module load bwpy/0.3.0','module add bwpy-mpi', 'module add fftw', 'module add cray-netcdf', 'module add cudatoolkit/7.5.18-1.0502.10743.2.1', 'module add cmake', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy2/bin/activate', 'export tasks=tica_msm_ana',
-                                   'export PYEMMA_NJOBS=10', 'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=10' ]
+                                   'export PYEMMA_NJOBS=1', 'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
           ana_task.executable = ['python']
           ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '>', 'analyse.log']
 
           ana_task.cpu_reqs = { 'processes': 1,
                                     'process_type': None,
-                                    'threads_per_process': 10,
+                                    'threads_per_process': 1,
                                     'thread_type': None
                                   }
 

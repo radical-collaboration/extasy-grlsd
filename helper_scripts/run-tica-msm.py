@@ -50,6 +50,7 @@ class Runticamsm(object):
 
     def run(self):
         time_start=time.time()
+        print("start")
         parser = self.create_arg_parser()
         args = parser.parse_args()
         
@@ -92,7 +93,13 @@ class Runticamsm(object):
 
         inp = pyemma.coordinates.source(traj_files, featurizer)
         #inp.get_output()
+        print("n atoms",topfile.n_atoms)
+        print("n frames total",inp.n_frames_total())
+        print("n trajs",inp.number_of_trajectories())
+        print(" traj lengths", inp.trajectory_lengths())
+        print(" input dimension",inp.dimension())
 
+        
         tica_lag=Kconfig.tica_lag#1
         tica_dim=10
         tica_stride=1
@@ -101,6 +108,8 @@ class Runticamsm(object):
 	else:
           tica_weights='empirical'
         tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights=tica_weights)
+        print("TICA eigenvalues", tica_obj.eigenvalues)
+        print("TICA timescales",tica_obj.timescales)
 
         y = tica_obj.get_output()
         #y[0].shape
@@ -108,19 +117,12 @@ class Runticamsm(object):
         msm_states=Kconfig.msm_states
         msm_stride=1
         msm_lag=Kconfig.msm_lag#1
-        cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=50, stride=msm_stride)
-        
+        cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
+        print('time kmeans finished', str(time.time()-time_start)) 
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
         print('time msm finished', str(time.time()-time_start))
 
 
-        print("n atoms",topfile.n_atoms)
-        print("n frames total",inp.n_frames_total())
-        print("n trajs",inp.number_of_trajectories())
-        print(" traj lengths", inp.trajectory_lengths())
-        print(" input dimension",inp.dimension())
-
-        print("TICA eigenvalues", tica_obj.eigenvalues)
         #print(tica_obj.eigenvectors)
 
         print("MSM eigenvalues",m.eigenvalues(10))
@@ -130,7 +132,6 @@ class Runticamsm(object):
 
         #print("MSM clustercenters",cl.clustercenters)
         
-        print("TICA timescales",tica_obj.timescales)
         print("MSM timescales", m.timescales(10))
         print("MSM stat", m.stationary_distribution)
         print("MSM active set", m.active_set)
@@ -238,7 +239,8 @@ class Runticamsm(object):
 
         
         ########################################
-
+        colornames=[name for name, color in matplotlib.colors.cnames.iteritems()]
+        
         tica0=np.array([])
         tica1=np.array([])
         for i in range(len(y)):
@@ -472,7 +474,7 @@ class Runticamsm(object):
               #print i[0]
               tica0=np.append(tica0,y[i[0]][:,0])
               tica1=np.append(tica1,y[i[0]][:,1])
-            cp = scatter(tica0, tica1, s=10, marker='o', linewidth=0.,cmap='jet', label='iter '+str(p_iter))
+            cp = scatter(tica0, tica1, s=10, marker='o', linewidth=0.,cmap='jet', c=colornames[p_iter], label='iter '+str(p_iter))
 
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs5_iters.png', bbox_inches='tight', dpi=200)
@@ -493,7 +495,7 @@ class Runticamsm(object):
               if i in m.active_set:
                 p_states_active.append(np.argwhere(i==m.active_set)[0][0])
             p_states_active=np.unique(np.array(p_states_active)).astype(int)
-            cp = scatter(m.eigenvectors_right(10)[p_states_active,1], m.eigenvectors_right(10)[p_states_active,2], s=10,  marker='o', linewidth=0., cmap='spectral', label='iter '+str(p_iter))
+            cp = scatter(m.eigenvectors_right(10)[p_states_active,1], m.eigenvectors_right(10)[p_states_active,2], s=10,  marker='o', linewidth=0., cmap='spectral', c=colornames[p_iter], label='iter '+str(p_iter))
 
         legend(loc='center left', bbox_to_anchor=(1, 0.5))
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs_3_iter.png', bbox_inches='tight', dpi=200)
