@@ -239,14 +239,14 @@ class Runticamsm(object):
             not_connect=np.where(np.in1d(states_unique, states_largest,invert=True))[0]
             all_connect=np.where(np.in1d(states_unique, states_largest))[0]
             print("worked timescales",current_timescales[:10])
-            print("not_connect",not_connect)
+            print("not_connected states",not_connect)
 
 
           projected_microstate_coords_scaled = sklearn.preprocessing.MinMaxScaler(feature_range=(-1, 1)).fit_transform(current_eigenvecs[:,1:])
 
           projected_microstate_coords_scaled *= np.sqrt(current_timescales[:num_eigenvecs_to_compute-1] / current_timescales[0]).reshape(1, num_eigenvecs_to_compute-1)
 
-          select_n_macro_type='kin_content' #Kconfig.select_n_macro_type
+          select_n_macro_type=Kconfig.select_n_macro_type #'kin_content' #Kconfig.select_n_macro_type
           if select_n_macro_type == 'const': # 1_over_cmacro_estim
               par_num_macrostates=30    
               num_macrostates = min(par_num_macrostates,num_visited_microstates)

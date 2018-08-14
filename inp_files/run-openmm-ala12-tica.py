@@ -31,8 +31,8 @@ args = parser.parse_args()
 print("num of structures:",str(args.idxend-args.idxstart))
 print("found num:", str(len(glob.glob(args.path+'/iter'+str(args.iter)+'_input*.pdb')))) 
 for i in range(args.idxstart,args.idxend):
-        print("pdb "+str(i)+" from "+ str(args.idxend))
-        pdb=mdtraj.load(args.path+'/iter'+str(args.iter)+'_input'+str(i)+'.pdb') 
+	print("pdb "+str(i)+" from "+ str(args.idxend))
+	pdb=mdtraj.load(args.path+'/iter'+str(args.iter)+'_input'+str(i)+'.pdb') 
 	topology = pdb.topology.to_openmm()
 	#implicit forcefield
 	forcefield = ForceField('amber99sbildn.xml', 'amber99_obc.xml')
@@ -70,7 +70,7 @@ for i in range(args.idxstart,args.idxend):
 	pos = state.getPositions(asNumpy=True)
 	print(state.getPotentialEnergy(), state.getKineticEnergy())
 	PDBFile.writeFile(simulation.topology, pos, open(args.path+'/iter'+str(args.iter)+'_out'+str(i)+'.pdb', 'a'))
-        del simulation, integrator, system
+	del simulation, integrator, system
 
 
 

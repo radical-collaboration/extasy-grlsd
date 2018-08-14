@@ -12,13 +12,13 @@ QUEUE                   = 'high'      #'normal'             # Name of the queue 
 #--------------------------General--------------------------------
 
 WALLTIME                = 720    #120         # Walltime to be requested for the pilot in minutes
-NODESIZE                = 8
+NODESIZE                = 16
 num_replicas            = 200                 #total num replica
-num_parallel_MD_sim     = 8    #160           # Total Number of tasks or Compute Units
+num_parallel_MD_sim     = 16    #160           # Total Number of tasks or Compute Units
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
-start_iter              = 0                    # Iteration number with which to start
+start_iter              = 1                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
 remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica'   
 
@@ -37,7 +37,7 @@ koopman                 = 'yes'
 #strategy                = 'extend'
 strategy                = 'cmacro'
 
-select_n_macro_type     = 'kin_content'
+select_n_macro_type     = 'const'    #'kin_content'
 
 tica_lag                = 100
 tica_stride             = 1

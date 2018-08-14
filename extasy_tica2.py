@@ -6,7 +6,7 @@ __license__ = 'MIT'
 __use_case_name__ = 'Gromacs + LSDMap simulation-analysis using EnTK'
 
 
-from radical.entk import Pipeline, Stage, Task, AppManager, ResourceManager
+from radical.entk import Pipeline, Stage, Task, AppManager
 import argparse
 import os
 import glob
@@ -241,9 +241,9 @@ if __name__ == '__main__':
           
         print res_dict
         # Create Resource Manager object with the above resource description
-        rman = ResourceManager(res_dict)
+        #rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
-        rman.shared_data = [Kconfig.md_dir+Kconfig.md_input_file,
+        shared_data_all = [Kconfig.md_dir+Kconfig.md_input_file,
                             Kconfig.md_dir+Kconfig.md_run_file,
 			    args.Kconfig,
 			    #'%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig),
@@ -258,7 +258,7 @@ if __name__ == '__main__':
                             #'%s/selection.py' % Kconfig.helper_scripts,
                             #'%s/selection-cluster.py' % Kconfig.helper_scripts,
                             #'%s/reweighting.py' % Kconfig.helper_scripts
-                            ]
+                           ]
 
         #if Kconfig.ndx_file is not None:
         #    rman.shared_data.append(Kconfig.ndx_file)
@@ -266,12 +266,14 @@ if __name__ == '__main__':
         # Create Application Manager, only one extasy script on one rabbit-mq server now
         appman = AppManager(hostname='two.radical-project.org', port=33134)#port=args.port)
         # appman = AppManager(port=) # if using docker, specify port here.
+        appman.resource_desc = res_dict
+        appman.shared_data = shared_data_all
 
         # Assign resource manager to the Application Manager
-        appman.resource_manager = rman
+        #appman.resource_manager = rman
 
         # Assign the workflow as a set of Pipelines to the Application Manager
-        appman.assign_workflow(wf)
+        appman.workflow = set([wf])
 
         # Run the Application Manager
         appman.run()
