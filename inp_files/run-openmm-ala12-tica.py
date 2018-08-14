@@ -70,7 +70,7 @@ for i in range(args.idxstart,args.idxend):
 	pos = state.getPositions(asNumpy=True)
 	print(state.getPotentialEnergy(), state.getKineticEnergy())
 	PDBFile.writeFile(simulation.topology, pos, open(args.path+'/iter'+str(args.iter)+'_out'+str(i)+'.pdb', 'a'))
-
+        del simulation, integrator, system
 
 
 

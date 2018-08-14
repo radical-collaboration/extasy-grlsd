@@ -137,13 +137,15 @@ class Runticamsm(object):
         msm_states=Kconfig.msm_states
         msm_stride=Kconfig.msm_stride
         msm_lag=Kconfig.msm_lag
-        cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
-        #cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=50, n_jobs=None)
+        #cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
+        cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=10, n_jobs=None)
         print('time kmeans finished', str(time.time()-time_start)) 
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
         print('time msm finished', str(time.time()-time_start))
 
 
+
+        ########################################
         #print(tica_obj.eigenvectors)
 
         print("MSM eigenvalues",m.eigenvalues(10))
@@ -202,10 +204,10 @@ class Runticamsm(object):
         if Kconfig.strategy=='cmicro':
           state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
         elif Kconfig.strategy=='cmacro':
-        try:
+          #try:
           num_eigenvecs_to_compute = 10
           microstate_transitions_used=c
-          cache['too_small']='False'
+          #cache['too_small']='False'
           num_visited_microstates=c.shape[0]
           states_unique=np.arange(num_visited_microstates)
           visited_microstates=states_unique
@@ -305,14 +307,15 @@ class Runticamsm(object):
             restart_state=np.append(restart_state,add_microstate)
             #print(i,selected_macrostate[i], add_microstate)
 
-          restart_state=restart_state.astype('int')
-          print("restart_state",restart_state)
+          state_picks=restart_state.astype('int')
+          print("state_picks",state_picks)
           print("no exceptions")
-        except:
-          state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
-          print("restart_state",restart_state)
-          print("exception found")           
-
+          #except:
+          #state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
+          #print("state_picks",state_picks)
+          #print("exception found")           
+        else:
+          print("didn't recognize strategy")
         print("selected msm restarts", state_picks)        
 
         picks = [
@@ -422,7 +425,7 @@ class Runticamsm(object):
         plot(cumvar, linewidth=2)
         for thres in [0.5,0.8,0.95]:
           threshold_index=np.argwhere(cumvar > thres)[0][0]
-          print "msm thres, thres_idx" thres, threshold_index
+          print "msm thres, thres_idx", thres, threshold_index
           vlines(threshold_index, 0.0, 1.0, linewidth=2)
           hlines(thres, 0, cumvar.shape[0], linewidth=2)
 
