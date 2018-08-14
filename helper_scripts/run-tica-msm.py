@@ -14,6 +14,26 @@ from matplotlib.pyplot import *
 from pyemma import plots
 matplotlib.rcParams.update({'font.size': 14})
 print("pyemma version",pyemma.__version__)
+import msmtools
+import sklearn.preprocessing
+
+
+def select_restart_state(values, select_type, microstates, nparallel=1, parameters=None):
+    if select_type == 'rand':
+        #print(values,values.shape)
+        len_v=values.shape[0]
+        p = np.full(len_v,1.0/len_v)
+        #print(microstates, p)
+        return np.random.choice(microstates, p = p, size=nparallel)
+    elif select_type == 'sto_inv_linear':
+        inv_values = 1.0 / values
+        p = inv_values / np.sum(inv_values)
+        return np.random.choice(microstates, p = p, size=nparallel)
+    else:
+        print('ERROR: selected select_type in select_restart_state does not exist')
+
+
+
 
 class Runticamsm(object):
     """
@@ -102,7 +122,7 @@ class Runticamsm(object):
         
         tica_lag=Kconfig.tica_lag#1
         tica_dim=10
-        tica_stride=1
+        tica_stride=Kconfig.tica_stride
         if Kconfig.koopman=='yes':
           tica_weights='koopman'
 	else:
@@ -111,13 +131,14 @@ class Runticamsm(object):
         print("TICA eigenvalues", tica_obj.eigenvalues)
         print("TICA timescales",tica_obj.timescales)
 
-        y = tica_obj.get_output()
+        y = tica_obj.get_output(stride=tica_stride)
         #y[0].shape
         print('time tica finished', str(time.time()-time_start))
         msm_states=Kconfig.msm_states
-        msm_stride=1
-        msm_lag=Kconfig.msm_lag#1
+        msm_stride=Kconfig.msm_stride
+        msm_lag=Kconfig.msm_lag
         cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
+        #cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=50, n_jobs=None)
         print('time kmeans finished', str(time.time()-time_start)) 
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
         print('time msm finished', str(time.time()-time_start))
@@ -133,7 +154,7 @@ class Runticamsm(object):
         #print("MSM clustercenters",cl.clustercenters)
         
         print("MSM timescales", m.timescales(10))
-        print("MSM stat", m.stationary_distribution)
+        #print("MSM stat", m.stationary_distribution)
         print("MSM active set", m.active_set)
         print('fraction of states used = ', m.active_state_fraction)
         print('fraction of counts used = ', m.active_count_fraction)
@@ -142,6 +163,8 @@ class Runticamsm(object):
         c = m.count_matrix_full
         s =  np.sum(c, axis=1)
         print("count matrix sums",s)
+        if 0 not in s:
+          q = 1.0 / s
 
 	if Kconfig.strategy=='cmicro':
           if 0 not in s:
@@ -176,7 +199,119 @@ class Runticamsm(object):
 
         n_pick=int(args.n_select)#100
 
-        state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
+        if Kconfig.strategy=='cmicro':
+          state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
+        elif Kconfig.strategy=='cmacro':
+        try:
+          num_eigenvecs_to_compute = 10
+          microstate_transitions_used=c
+          cache['too_small']='False'
+          num_visited_microstates=c.shape[0]
+          states_unique=np.arange(num_visited_microstates)
+          visited_microstates=states_unique
+            
+          largest_visited_set=msmtools.estimation.largest_connected_set(microstate_transitions_used)
+          C_largest0=microstate_transitions_used[largest_visited_set, :][:, largest_visited_set]
+          rowsum = np.ravel(C_largest0.sum(axis=1))
+          largest_visited_set2=largest_visited_set[rowsum>0]
+          C_largest=microstate_transitions_used[largest_visited_set2, :][:, largest_visited_set2]
+          rowsum = C_largest.sum(axis=1)
+
+          #print("C_largest", C_largest.shape[0])
+          if C_largest.shape[0]>10:
+            if(np.min(rowsum) == 0.0):
+                print("failed because rowsum", rowsoum, C_largest)
+                cache['small']='True'
+                #raise ValueError("matrix C contains rows with sum zero.")
+            #try:
+            #print("try")
+            T_largest=msmtools.estimation.transition_matrix(C_largest, reversible=True)
+            #print(T_largest.shape)
+            states_largest=largest_visited_set2
+            print("largest_connected_set", states_largest.shape[0])
+            #print(states_largest, states_unique)
+            MSM_largest=pyemma.msm.markov_model(T_largest)
+            current_eigenvecs = MSM_largest.eigenvectors_right(num_eigenvecs_to_compute)
+            current_timescales = np.real(MSM_largest.timescales())
+            current_eigenvals = np.real(MSM_largest.eigenvalues())
+            not_connect=np.where(np.in1d(states_unique, states_largest,invert=True))[0]
+            all_connect=np.where(np.in1d(states_unique, states_largest))[0]
+            print("worked timescales",current_timescales[:10])
+            print("not_connect",not_connect)
+
+
+          projected_microstate_coords_scaled = sklearn.preprocessing.MinMaxScaler(feature_range=(-1, 1)).fit_transform(current_eigenvecs[:,1:])
+
+          projected_microstate_coords_scaled *= np.sqrt(current_timescales[:num_eigenvecs_to_compute-1] / current_timescales[0]).reshape(1, num_eigenvecs_to_compute-1)
+
+          select_n_macro_type='kin_content' #Kconfig.select_n_macro_type
+          if select_n_macro_type == 'const': # 1_over_cmacro_estim
+              par_num_macrostates=30    
+              num_macrostates = min(par_num_macrostates,num_visited_microstates)
+          elif select_n_macro_type == 'kin_var': # 1_over_cmacro_estim3
+              frac_kin_var=0.5
+              kin_var = np.cumsum(current_eigenvals**2)
+              cut = kin_var[kin_var < kin_var.max()*frac_kin_var]
+              num_macrostates = min(max(cut.shape[0],1),num_visited_microstates)
+          elif select_n_macro_type == 'kin_content': # 1_over_cmacro_estim4
+              frac_kin_content=0.5
+              kin_cont = np.cumsum(-1./np.log(np.abs(current_eigenvals[1:])))/2.
+              cut = kin_cont[kin_cont < kin_cont.max()*frac_kin_content]
+              num_macrostates = min(max(cut.shape[0],1),num_visited_microstates)
+
+
+          kmeans_obj = pyemma.coordinates.cluster_kmeans(data=projected_microstate_coords_scaled, k=num_macrostates, max_iter=10)
+
+
+
+          largest_assign=kmeans_obj.assign()[0]
+          all_assign=np.zeros(num_visited_microstates)
+          all_assign[all_connect]=largest_assign
+          all_assign[not_connect]=np.arange(not_connect.shape[0])+largest_assign.max()+1
+          macrostate_assignment_of_visited_microstates=all_assign.astype('int')
+
+          print("all_assign",all_assign)
+
+
+          select_macro_type = 'sto_inv_linear'
+          if select_macro_type=='dmdmd':
+            macrostate_counts = np.array([np.sum(s[states_unique][macrostate_assignment_of_visited_microstates == macrostate_label]) for macrostate_label in range(macrostate_assignment_of_visited_microstates.max()+1)])
+            selected_macrostate = select_restart_state(macrostate_counts[macrostate_counts > 0], 'rand', np.arange(macrostate_counts.shape[0])[macrostate_counts > 0], nparallel=nparallel)
+            #print(macrostate_counts[macrostate_counts > 0], np.arange(num_macrostates)[macrostate_counts > 0], selected_macrostate)
+          elif select_macro_type == 'sto_inv_linear': 
+            macrostate_counts = np.array([np.sum(s[states_unique][macrostate_assignment_of_visited_microstates == macrostate_label]) for macrostate_label in range(macrostate_assignment_of_visited_microstates.max()+1)])
+            
+            selected_macrostate = select_restart_state(macrostate_counts[macrostate_counts > 0], 'sto_inv_linear', np.arange(macrostate_counts.shape[0])[macrostate_counts > 0], nparallel=n_pick)
+
+          print("macrostate_counts", macrostate_counts)
+          print("selected_macrostate", selected_macrostate)
+
+
+
+
+          select_micro_within_macro_type='sto_inv_linear'
+          restart_state=np.empty((0))
+          for i in range(n_pick):
+            selected_macrostate_mask = (macrostate_assignment_of_visited_microstates == selected_macrostate[i])
+            #print(selected_macrostate, microstate_transitions_used[visited_microstates], macrostate_counts, counts[states_unique][selected_macrostate])
+            counts_in_selected_macrostate = s[states_unique][selected_macrostate_mask]
+            #print parameters['select_micro_within_macro_type']
+            if select_micro_within_macro_type == 'sto_inv_linear':
+                # within a macrostate, select a microstate based on count
+                add_microstate=select_restart_state(counts_in_selected_macrostate, 'sto_inv_linear', visited_microstates[selected_macrostate_mask], nparallel=1)
+            elif select_micro_within_macro_type == 'rand': 
+                add_microstate=select_restart_state(counts_in_selected_macrostate, 'rand', visited_microstates[selected_macrostate_mask], nparallel=1)
+                #restart_state = [np.random.choice(visited_microstates[selected_macrostate_mask])] * nparallel
+            restart_state=np.append(restart_state,add_microstate)
+            #print(i,selected_macrostate[i], add_microstate)
+
+          restart_state=restart_state.astype('int')
+          print("restart_state",restart_state)
+          print("no exceptions")
+        except:
+          state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
+          print("restart_state",restart_state)
+          print("exception found")           
 
         print("selected msm restarts", state_picks)        
 
@@ -191,7 +326,7 @@ class Runticamsm(object):
 
         traj_select = [traj_files[pick[0]] for pick in picks]
         frame_select = [pick[1]*tica_stride*msm_stride for pick in picks]
-        print('traj_select',traj_select)
+        print('traj_select picks',picks)
         print('frame_select',traj_select)
         print('time frame selection finished', str(time.time()-time_start))
         text_file = open(args.path + "/traj_select.txt", "w")
@@ -230,12 +365,12 @@ class Runticamsm(object):
 
 
         rg_arr=np.array(rg_arr)
-        print("rg values", rg_arr.min(), rg_arr.max(), rg_arr)
+        #print("rg values", rg_arr.min(), rg_arr.max(), rg_arr)
         rmsd_arr=np.array(rmsd_arr)
-        print("rmsd values", rmsd_arr.min(), rmsd_arr.max(), rmsd_arr)
+        #print("rmsd values", rmsd_arr.min(), rmsd_arr.max(), rmsd_arr)
 
         q_arr=np.array(q_arr)
-        print("Q values", q_arr.min(), q_arr.max(), q_arr)
+        #print("Q values", q_arr.min(), q_arr.max(), q_arr)
 
         
         ########################################
@@ -263,7 +398,7 @@ class Runticamsm(object):
         plot(cumvar, linewidth=2)
         for thres in [0.5,0.8,0.95]:
           threshold_index=np.argwhere(cumvar > thres)[0][0]
-          print thres, threshold_index
+          print "tica thres, thres_idx", thres, threshold_index
           vlines(threshold_index, 0.0, 1.0, linewidth=2)
           hlines(thres, 0, cumvar.shape[0], linewidth=2)
 
@@ -287,7 +422,7 @@ class Runticamsm(object):
         plot(cumvar, linewidth=2)
         for thres in [0.5,0.8,0.95]:
           threshold_index=np.argwhere(cumvar > thres)[0][0]
-          print thres, threshold_index
+          print "msm thres, thres_idx" thres, threshold_index
           vlines(threshold_index, 0.0, 1.0, linewidth=2)
           hlines(thres, 0, cumvar.shape[0], linewidth=2)
 

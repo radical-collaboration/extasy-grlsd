@@ -15,6 +15,8 @@ import imp
 import json
 import traceback
 import time
+import socket
+print(socket.gethostname())
 
 def create_workflow(Kconfig,args):
 
@@ -24,7 +26,10 @@ def create_workflow(Kconfig,args):
     # ------------------------------------------------------------------------------------------------------------------
     cur_iter = int(Kconfig.start_iter)#0
     #assumed of iteration non zero that files are in combined_path
-    combined_path=str(Kconfig.remote_output_directory)  #'/u/sciteam/hruska/scratch/extasy-tica'
+    if str(socket.gethostname())=='giotto.rice.edu':
+      combined_path=str(Kconfig.remote_output_directory)+'-giotto' 
+    else:
+      combined_path=str(Kconfig.remote_output_directory)  #'/u/sciteam/hruska/scratch/extasy-tica'
     num_parallel=int(Kconfig.NODESIZE)
     num_replicas=int(Kconfig.num_replicas)
     #if cur_iter==0:
