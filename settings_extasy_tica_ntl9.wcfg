@@ -1,0 +1,54 @@
+#-------------------------Applications----------------------
+simulator               = 'openmm'           # Simulator to be loaded, only openmm
+#analyzer                = 'Lsdmap'          # needs 'clustering' restarts
+#restarts                = 'clustering'     # works only with Lsdmap
+#--------------------------Allocation--------------------------------
+
+#PILOTSIZE               = 128     #2560       # Number of cores to be reserved, should be num_parallel_MD_sim*num_CUs_per_MD_replica
+REMOTE_HOST             = 'ncsa.bw_aprun'   #'ncsa.bw' 'ncsa.bw_aprun'     # Label/Name of the Remote Machine
+ALLOCATION              = 'bamm'                    # Allocation to be charged
+use_gpus                = 'True'
+QUEUE                   = 'high'      #'normal'             # Name of the queue in the remote machine
+#--------------------------General--------------------------------
+
+WALLTIME                = 720    #120         # Walltime to be requested for the pilot in minutes
+NODESIZE                = 4
+num_replicas            = 20                 #total num replica
+num_parallel_MD_sim     = 4    #160           # Total Number of tasks or Compute Units
+CPUs_per_NODE           = 16                   # each replica uses that many Cus
+
+num_iterations          = 50                    # Number of iterations of Simulation-Analysis
+start_iter              = 0                    # Iteration number with which to start
+nsave                   = 1                    # number of iterations after which output is transfered to local machine
+remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-ntl9'   
+
+#--------------------------Simulation--------------------------------
+md_steps                = 10000    #10000=10sec, 100000= 2 min
+md_dir                  = './files-ntl9/'
+md_input_file           = 'ntl9.pdb'        # Entire path to the MD Input file - Do not use $HOME or the likes
+md_run_file             = 'run-openmm-xml.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
+md_run_dir              = './inp_files/'
+md_use_xml              = yes
+trajstride              = 100
+#--------------------------Analysis----------------------------------
+
+helper_scripts          = './helper_scripts'
+koopman                 = 'yes'
+#koopman                 = 'no'
+#strategy                = 'cmicro'
+#strategy                = 'extend'
+strategy                = 'cmacro'
+
+select_n_macro_type     = 'const'    #'kin_content'
+
+tica_lag                = 100
+tica_stride             = 1
+msm_stride              = 1
+msm_states              = 300
+msm_lag                 = 100
+
+#obsolete
+#lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMap configuration file - Do not use $HOME or the likes
+#w_file               = 'weight.w'           # Filename to be used for the weight file
+#max_alive_neighbors  = '10'                 # Maximum alive neighbors to be considered while reweighting
+#max_dead_neighbors   = '1'                  # Maximum dead neighbors to be considered while reweighting

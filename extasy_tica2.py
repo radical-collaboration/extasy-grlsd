@@ -43,12 +43,13 @@ def create_workflow(Kconfig,args):
       pre_proc_task = Task()
       pre_proc_task.pre_exec = ['export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
                                 ]
-      pre_proc_task.executable = ['mv']
-      pre_proc_task.arguments = [ combined_path, combined_path + time.strftime("%Y-%m-%d-%H-%M")
+      pre_proc_task.executable = ['if']
+      pre_proc_task.arguments = [ '[', '-d', combined_path, '];', 'then', 'mv', combined_path, combined_path + time.strftime("%Y-%m-%d-%H-%M"),';', 'fi'
                               ]
-      pre_proc_task.copy_input_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
+      pre_proc_task.copy_output_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
                                      '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
-                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)]                                  
+                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)
+                                       ]
       pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
       pre_proc_stage.add_tasks(pre_proc_task)
       wf.add_stages(pre_proc_stage)
@@ -99,12 +100,18 @@ def create_workflow(Kconfig,args):
                                   '--trajstride', '10', '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
                                   '--path',combined_path,'--iter',str(cur_iter),
                                   '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
-          link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
+          if Kconfig.md_use_xml=='yes':
+            link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file)),
+                      '$SHARED/system-5.xml > system-5.xml',
+                      '$SHARED/integrator-5.xml > integrator-5.xml']            
+          else:
+            link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
           copy_arr=[]
           if cur_iter==0:
             for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
-              #copy_arr=copy_arr+['$SHARED/%s > iter0_input%s.pdb' % (Kconfig.md_input_file, idx)]
               copy_arr=copy_arr+['$SHARED/%s > %s/iter0_input%s.pdb' % (Kconfig.md_input_file, combined_path, idx)]           
+    
+    
           #if cur_iter==0 and num_allocated_rep==0:
           #   copy_arr = copy_arr +['$SHARED/%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig)]
           sim_task.link_input_data = link_arr #+ copy_arr
@@ -243,24 +250,19 @@ if __name__ == '__main__':
         # Create Resource Manager object with the above resource description
         #rman = ResourceManager(res_dict)
         # Data common to multiple tasks -- transferred only once to common staging area
-        shared_data_all = [Kconfig.md_dir+Kconfig.md_input_file,
-                            Kconfig.md_dir+Kconfig.md_run_file,
-			    args.Kconfig,
-			    #'%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig),
-                            #Kconfig.lsdm_config_file,
-                            #'%s/spliter-tica.py' % Kconfig.helper_scripts,
-                            '%s/run-tica-msm.py' % Kconfig.helper_scripts,
-                            #'%s/run.py' % Kconfig.helper_scripts,
-                            #'%s/run_openmm.py' % Kconfig.helper_scripts,
-                            #'%s/pre_analyze.py' % Kconfig.helper_scripts,
-                            #'%s/pre_analyze_openmm.py' % Kconfig.helper_scripts,
-                            #'%s/post_analyze.py' % Kconfig.helper_scripts,
-                            #'%s/selection.py' % Kconfig.helper_scripts,
-                            #'%s/selection-cluster.py' % Kconfig.helper_scripts,
-                            #'%s/reweighting.py' % Kconfig.helper_scripts
+        shared_data_all = [args.Kconfig
                            ]
-
-        #if Kconfig.ndx_file is not None:
+        if Kconfig.md_use_xml=='yes':
+          shared_data_all=shared_data_all+['%s/system-5.xml' % Kconfig.md_dir,
+                                           '%s/integrator-5.xml' % Kconfig.md_dir,
+                                           Kconfig.md_run_dir+Kconfig.md_run_file,
+                                          '%s/run-tica-msm.py' % Kconfig.helper_scripts]
+        else:
+          shared_data_all=shared_data_all+[Kconfig.md_dir+Kconfig.md_input_file,
+                                           Kconfig.md_dir+Kconfig.md_run_file,
+                                          '%s/run-tica-msm.py' % Kconfig.helper_scripts]
+        print "shared_data_all", shared_data_all 
+       #if Kconfig.ndx_file is not None:
         #    rman.shared_data.append(Kconfig.ndx_file)
 
         # Create Application Manager, only one extasy script on one rabbit-mq server now

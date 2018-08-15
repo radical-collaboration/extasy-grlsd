@@ -1,4 +1,5 @@
 results/
+*.wcfgc
 *.log
 *.prof
 record.zip
