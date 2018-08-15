@@ -41,18 +41,27 @@ def create_workflow(Kconfig,args):
     if cur_iter==0:
       pre_proc_stage = Stage()
       pre_proc_task = Task()
-      pre_proc_task.pre_exec = ['export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' 
-                                ]
-      pre_proc_task.executable = ['if']
-      pre_proc_task.arguments = [ '[', '-d', combined_path, '];', 'then', 'mv', combined_path, combined_path + time.strftime("%Y-%m-%d-%H-%M"),';', 'fi'
-                              ]
-      pre_proc_task.copy_output_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
-                                     '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
-                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)
-                                       ]
+      pre_proc_task.pre_exec = ['export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1']
+      pre_proc_task.executable = ['mv']
+      pre_proc_task.arguments = [ combined_path, combined_path + time.strftime("%Y-%m-%d-%H-%M") ]
       pre_proc_task_ref = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage.uid, pre_proc_task.uid)
       pre_proc_stage.add_tasks(pre_proc_task)
       wf.add_stages(pre_proc_stage)
+      pre_proc_stage2 = Stage()
+      pre_proc_task2 = Task()
+      pre_proc_task2.pre_exec = ['export tasks=pre_proc_task','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1']
+      pre_proc_task2.executable = ['ls']
+      pre_proc_task2.arguments = ['-l']
+      pre_proc_task2.copy_input_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
+                                     '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
+                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)
+                                       ]
+
+
+      pre_proc_task_ref2 = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage2.uid, pre_proc_task2.uid)
+      pre_proc_stage2.add_tasks(pre_proc_task2)
+      wf.add_stages(pre_proc_stage2)
+ 
       # ------------------------------------------------------------------------------------------------------------------
     
     while(cur_iter <  int(Kconfig.num_iterations)):
@@ -97,7 +106,7 @@ def create_workflow(Kconfig,args):
                                     'thread_type': None
                                   }
           sim_task.arguments = ['run_openmm.py',
-                                  '--trajstride', '10', '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
+                                  '--trajstride', str(Kconfig.trajstride), '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
                                   '--path',combined_path,'--iter',str(cur_iter),
                                   '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
           if Kconfig.md_use_xml=='yes':
@@ -105,12 +114,17 @@ def create_workflow(Kconfig,args):
                       '$SHARED/system-5.xml > system-5.xml',
                       '$SHARED/integrator-5.xml > integrator-5.xml']            
           else:
-            link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file))]
+            link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.msd_run_file))]
           copy_arr=[]
           if cur_iter==0:
             for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
               copy_arr=copy_arr+['$SHARED/%s > %s/iter0_input%s.pdb' % (Kconfig.md_input_file, combined_path, idx)]           
-    
+            #if num_allocated_rep==0:
+            #  copy_arr=copy_arr + ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
+            #                         '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
+            #                         '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)
+            #                           ]
+
     
           #if cur_iter==0 and num_allocated_rep==0:
           #   copy_arr = copy_arr +['$SHARED/%s > %s/%s' % (args.Kconfig, combined_path, args.Kconfig)]
@@ -120,8 +134,7 @@ def create_workflow(Kconfig,args):
             copy_out=[]
             for idx in range(num_allocated_rep, num_allocated_rep+use_replicas):
               #copy_arr=copy_arr+['$SHARED/%s > iter0_input%s.pdb' % (Kconfig.md_input_file, idx)]
-              copy_out=copy_out+['%s/iter%s_out%s.pdb > %s/iter%s_input%s.pdb' % (combined_path, cur_iter, idx, combined_path, (cur_iter+1), idx)]
-            
+              copy_out=copy_out+['%s/iter%s_out%s.pdb > %s/iter%s_input%s.pdb' % (combined_path, cur_iter, idx, combined_path, (cur_iter+1), idx)]           
             sim_task.copy_output_data = copy_out  
             #if Kconfig.ndx_file is not None:
             #    sim_task.link_input_data.append('$SHARED/{0}'.format(os.path.basename(Kconfig.ndx_file)))
@@ -256,6 +269,7 @@ if __name__ == '__main__':
           shared_data_all=shared_data_all+['%s/system-5.xml' % Kconfig.md_dir,
                                            '%s/integrator-5.xml' % Kconfig.md_dir,
                                            Kconfig.md_run_dir+Kconfig.md_run_file,
+                                           Kconfig.md_dir+Kconfig.md_input_file,
                                           '%s/run-tica-msm.py' % Kconfig.helper_scripts]
         else:
           shared_data_all=shared_data_all+[Kconfig.md_dir+Kconfig.md_input_file,

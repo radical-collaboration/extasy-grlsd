@@ -151,7 +151,7 @@ for i in range(args.idxstart,args.idxend):
   elapsed = end -start
   time=elapsed.seconds + elapsed.microseconds*1e-6
   print('Integrated %d steps in %g seconds' % (steps, time))
-  print('%g ns/day' % (dt*steps*86400/time).value_in_unit(nanoseconds))
+  print('%g ns/day' % (dt*steps*86400/time).value_in_unit(u.nanoseconds))
   state = simulation.context.getState(getPositions=True, getVelocities=True,getEnergy=True)
   pbv = state.getPeriodicBoxVectors(asNumpy=True)
   vel = state.getVelocities(asNumpy=True)
