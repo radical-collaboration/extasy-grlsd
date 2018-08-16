@@ -16,6 +16,7 @@ import json
 import traceback
 import time
 import socket
+import numpy as np
 print(socket.gethostname())
 
 def create_workflow(Kconfig,args):
@@ -77,7 +78,7 @@ def create_workflow(Kconfig,args):
 
         sim_stage = Stage()
         sim_task_ref = list()
-        def_rep_per_thread=int(num_replicas/num_parallel)+1
+        def_rep_per_thread=int(np.ceil(num_replicas/num_parallel))
         num_allocated_rep=0
         num_used_threads=0
         while(num_allocated_rep<num_replicas):
@@ -161,8 +162,8 @@ def create_workflow(Kconfig,args):
           ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '>', 'analyse.log']
 
           ana_task.cpu_reqs = { 'processes': 1,
-                                    'process_type': None,
-                                    'threads_per_process': 1,
+                                    'process_type': 'MPI',
+                                    'threads_per_process': 16,
                                     'thread_type': None
                                   }
 
