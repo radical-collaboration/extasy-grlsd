@@ -168,16 +168,6 @@ class Runticamsm(object):
         if 0 not in s:
           q = 1.0 / s
 
-	if Kconfig.strategy=='cmicro':
-          if 0 not in s:
-              q = 1.0 / s
-
-        elif Kconfig.strategy=='cmacro':
-           q = s
-
-	else:
- 	  print('ERROR strategy not recognized')
-
         n_states=c.shape[0]
 
         dtrajs = [ t for t in cl.dtrajs ]
