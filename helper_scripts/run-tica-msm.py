@@ -132,15 +132,20 @@ class Runticamsm(object):
         print("TICA timescales",tica_obj.timescales)
 
         y = tica_obj.get_output(stride=tica_stride)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_y.npy',y)
         #y[0].shape
         print('time tica finished', str(time.time()-time_start))
         msm_states=Kconfig.msm_states
         msm_stride=Kconfig.msm_stride
         msm_lag=Kconfig.msm_lag
-        #cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
-        cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=10, n_jobs=None)
+        cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_cl.npy',cl)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_dtrajs.npy',cl.dtrajs)
+        #cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=10, n_jobs=None)
         print('time kmeans finished', str(time.time()-time_start)) 
+        
         m = pyemma.msm.estimate_markov_model(cl.dtrajs, msm_lag)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_m.npy',m)
         print('time msm finished', str(time.time()-time_start))
 
 
