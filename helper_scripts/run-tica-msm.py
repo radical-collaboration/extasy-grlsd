@@ -139,7 +139,7 @@ class Runticamsm(object):
         msm_stride=Kconfig.msm_stride
         msm_lag=Kconfig.msm_lag
         cl = pyemma.coordinates.cluster_kmeans(data=y, k=msm_states, max_iter=10, stride=msm_stride)
-        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_cl.npy',cl)
+        #np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_cl.npy',cl)
         np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_dtrajs.npy',cl.dtrajs)
         #cl = pyemma.coordinates.cluster_mini_batch_kmeans(data=y, k=msm_states, max_iter=10, n_jobs=None)
         print('time kmeans finished', str(time.time()-time_start)) 
@@ -464,7 +464,7 @@ class Runticamsm(object):
         clf()
         xlabel("MSM ev1")
         ylabel("MSM ev2")
-        fig, ax = plots.plot_free_energy(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], cmap='Spectral', weights=m.stationary_distribution)
+        fig, ax = plots.plot_free_energy(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], cmap='Spectral', weights=m.stationary_distribution, nbins=30)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs2.png', bbox_inches='tight', dpi=200)
 
         clf()
@@ -477,7 +477,7 @@ class Runticamsm(object):
         clf()
         xlabel("RMSD")
         ylabel("Rg")
-        fig, ax = plots.plot_free_energy(rmsd_arr, rg_arr, cmap='Spectral')
+        fig, ax = plots.plot_free_energy(rmsd_arr, rg_arr, cmap='Spectral', nbins=30)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_rgrmsd2.png', bbox_inches='tight', dpi=200)
 
         clf()
@@ -485,6 +485,12 @@ class Runticamsm(object):
         ylabel("Rg")
         cp = scatter(q_arr, rg_arr, s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM states')
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_qrg.png', bbox_inches='tight', dpi=200)
+
+        clf()
+        xlabel("Q")
+        ylabel("Rg")
+        fig, ax = plots.plot_free_energy(q_arr, rg_arr, cmap='Spectral', nbins=30)
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_qrg_2.png', bbox_inches='tight', dpi=200)
 
         #Q 1d free energy
         clf()
@@ -575,7 +581,7 @@ class Runticamsm(object):
 
         p_states=np.array([])
         p_unique=[]
-        for p_iter in range(p_iter_max,-1,-1):
+        for p_iter in range(p_iter_max):
             p_arr=np.argwhere(iter_arr==p_iter)
             for i in p_arr:
               #print i[0]
