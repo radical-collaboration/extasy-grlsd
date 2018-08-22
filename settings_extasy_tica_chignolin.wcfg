@@ -18,18 +18,19 @@ num_parallel_MD_sim     = 10    #160           # Total Number of tasks or Comput
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
-start_iter              = 4                    # Iteration number with which to start
+start_iter              = 0                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
-remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-chignolin'   
+remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-chignolin-r1000-pcca'   
 
 #--------------------------Simulation--------------------------------
 md_steps                = 30000    #10000=3min
 md_dir                  = './files-chignolin/'
 md_input_file           = 'chignolin.pdb'        # Entire path to the MD Input file - Do not use $HOME or the likes
+md_reference            = 'chignolin.pdb'
 md_run_file             = 'run-openmm-xml.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
 md_run_dir              = './inp_files/'
 md_use_xml              = 'yes'
-trajstride              = 10
+trajstride              = 100
 #--------------------------Analysis----------------------------------
 
 helper_scripts          = './helper_scripts'
@@ -40,12 +41,13 @@ koopman                 = 'yes'
 strategy                = 'cmacro'
 
 select_n_macro_type     = 'const'    #'kin_content'
+num_macrostates         = 10
 
-tica_lag                = 2
+tica_lag                = 1
 tica_stride             = 1
 msm_stride              = 1
 msm_states              = 100
-msm_lag                 = 2
+msm_lag                 = 1
 
 #obsolete
 #lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMap configuration file - Do not use $HOME or the likes

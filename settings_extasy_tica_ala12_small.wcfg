@@ -41,6 +41,7 @@ koopman                 = 'yes'
 strategy                = 'cmacro'
 
 select_n_macro_type     = 'const'    #'kin_content'
+num_macrostates         = 10
 
 tica_lag                = 1
 tica_stride             = 1

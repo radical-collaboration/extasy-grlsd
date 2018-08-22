@@ -251,7 +251,7 @@ class Runticamsm(object):
 
           select_n_macro_type=Kconfig.select_n_macro_type #'kin_content' #Kconfig.select_n_macro_type
           if select_n_macro_type == 'const': # 1_over_cmacro_estim
-              par_num_macrostates=30    
+              par_num_macrostates=int(Kconfig.num_macrostates)#30    
               num_macrostates = min(par_num_macrostates,num_visited_microstates)
           elif select_n_macro_type == 'kin_var': # 1_over_cmacro_estim3
               frac_kin_var=0.5
@@ -270,17 +270,19 @@ class Runticamsm(object):
             m.pcca(par_num_macrostates)
             macrostate_assignments = { k:v for k,v in enumerate(m.metastable_sets) }
             largest_assign = m.metastable_assignments
-            print('time pcca/macrostate kmeans finished', str(time.time()-time_start))
+            print("macrostate assignments", macrostate_assignments)
+            all_assign=largest_assign
+            print('time macrostate pcca finished', str(time.time()-time_start))
           else:
             kmeans_obj = pyemma.coordinates.cluster_kmeans(data=projected_microstate_coords_scaled, k=num_macrostates, max_iter=10)
             largest_assign=kmeans_obj.assign()[0]
-            print('time pcca/macrostate kmeans finished', str(time.time()-time_start))
+            print('time macrostate kmeans finished', str(time.time()-time_start))
             all_assign=np.zeros(num_visited_microstates)
             all_assign[all_connect]=largest_assign
             all_assign[not_connect]=np.arange(not_connect.shape[0])+largest_assign.max()+1
           
           macrostate_assignment_of_visited_microstates=all_assign.astype('int')
-
+          np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_macrostates.npy',macrostate_assignment_of_visited_microstates)
           print("all_assign",all_assign)
 
 
@@ -457,16 +459,16 @@ class Runticamsm(object):
 
 
         clf()
+        fig, ax = plots.plot_free_energy(tica0, tica1,cmap='Spectral')
         xlabel("TICA ev0")
         ylabel("TICA ev1")
-        fig, ax = plots.plot_free_energy(tica0, tica1,cmap='Spectral')
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs2.png', bbox_inches='tight', dpi=200)
 
         clf()
-        xlabel("TICA ev0")
-        ylabel("TICA ev1")
         fig, ax = plots.plot_free_energy(tica0, tica1,cmap='Spectral')
         cp = scatter(cl.clustercenters[:,0], cl.clustercenters[:,1], s=10, c='blue', marker='o', linewidth=0.,cmap='jet', label='MSM state centers')
+        xlabel("TICA ev0")
+        ylabel("TICA ev1")
         legend()
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_tica_evs3_centers.png', bbox_inches='tight', dpi=200)
 
@@ -492,9 +494,9 @@ class Runticamsm(object):
 
         #plot msm ev
         clf()
-        xlabel("RMSD")
-        ylabel("Rg")
         fig, ax = plots.plot_free_energy(rmsd_arr, rg_arr, cmap='Spectral', nbins=30)
+        xlabel("RMSD")
+        ylabel("Rg") 
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_rgrmsd2.png', bbox_inches='tight', dpi=200)
 
         clf()
@@ -515,6 +517,7 @@ class Runticamsm(object):
         F = -np.log(z)
         F=F-F.min()
         plot(x[1:], F)
+        scatter(x[1:], F)
         xlabel('Q', fontsize = 15)
         ylabel('Free Energy [kT]', fontsize =15)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_free_energy_q.png', bbox_inches='tight', dpi=200)
@@ -528,6 +531,7 @@ class Runticamsm(object):
         F = -np.log(z)
         F=F-F.min()
         plot(x[1:], F)
+        scatter(x[1:], F)
         xlabel('MSM ev1', fontsize = 15)
         ylabel('Free Energy [kT]', fontsize =15)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_free_energy.png', bbox_inches='tight', dpi=200)
@@ -561,13 +565,21 @@ class Runticamsm(object):
         clf()
         pyemma.plots.plot_cktest(ck, diag=True, figsize=(7,7), layout=(2,2), padding_top=0.1, y01=False, padding_between=0.3, dt=0.1, units='ns')
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_cktest.png')
+        
+
 
         its = pyemma.msm.its(dtrajs, nits=10)
         clf()
-        pyemma.plots.plot_implied_timescales(its, ylog=False, units='steps', linewidth=2)
+        pyemma.plots.plot_implied_timescales(its, ylog=True, units='steps', linewidth=2)
         #xlim(0, 40); ylim(0, 120);
-        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its.png')
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its.png', bbox_inches='tight', dpi=200)
 
+        lags = [1,2,5,10,20,50,100,200, 500,1000]
+        its = pyemma.msm.its(dtrajs, lags=lags, errors='bayes')
+        clf()
+        pyemma.plots.plot_implied_timescales(its, ylog=True, units='steps', linewidth=2)
+        #xlim(0, 40); ylim(0, 120);
+        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its2.png', bbox_inches='tight', dpi=200)
 
 
         #which msm states selected
