@@ -16,6 +16,7 @@ matplotlib.rcParams.update({'font.size': 14})
 print("pyemma version",pyemma.__version__)
 import msmtools
 import sklearn.preprocessing
+from itertools import combinations
 
 
 def select_restart_state(values, select_type, microstates, nparallel=1, parameters=None):
@@ -370,18 +371,32 @@ class Runticamsm(object):
         original_file = md.load(args.path+'/'+args.ref)#'/iter0_input0.pdb')
         out_files=glob.glob(args.path+'/iter*_out*.pdb')
         out_files.sort()
-
-        q_thres=0.5
+        
+        #print md.rmsd(md.load(out_files2[2]),original_file, atom_indices=heavy)[0]
+        BETA_CONST = 50  # 1/nm
+        LAMBDA_CONST = 1.8
+        NATIVE_CUTOFF = 0.45  # nanometers
+        heavy = original_file.topology.select_atom_indices('heavy')
+        heavy_pairs = np.array([(i,j) for (i,j) in combinations(heavy, 2)
+            if abs(original_file.topology.atom(i).residue.index - \
+               original_file.topology.atom(j).residue.index) > 3])
+        # compute the distances between these pairs in the native state
+        heavy_pairs_distances = md.compute_distances(original_file[0], heavy_pairs)[0]
+        # and get the pairs s.t. the distance is less than NATIVE_CUTOFF
+        native_contacts = heavy_pairs[heavy_pairs_distances < NATIVE_CUTOFF]
+        r0 = md.compute_distances(original_file[0], native_contacts)
+        
         rg_arr=[]
         rmsd_arr=[]
         q_arr=[]
         for file in out_files:
           file2 = md.load(file)
+          rmsd_val=md.rmsd(file2,original_file, atom_indices=heavy)[0]
           rg_arr.append(md.compute_rg(file2)[0])
-          rmsd_arr.append(md.rmsd(file2,original_file)[0])
-          dist_arr=md.compute_contacts(file2)[0][0]
-          q_arr.append(dist_arr[dist_arr<q_thres].shape[0])
-
+          rmsd_arr.append(rmsd_val)
+          r = md.compute_distances(file2[0], native_contacts)
+          q = np.mean(1.0 / (1 + np.exp(BETA_CONST * (r - LAMBDA_CONST * r0))), axis=1)[0]
+          q_arr.append(q)
 
         rg_arr=np.array(rg_arr)
         np.save(args.path+'/npy_iter'+str(args.cur_iter)+'_rg_arr.npy',rg_arr) 
@@ -444,6 +459,8 @@ class Runticamsm(object):
         plot(cumvar, linewidth=2)
         for thres in [0.5,0.8,0.95]:
           threshold_index=np.argwhere(cumvar > thres)[0][0]
+m itertools import combinations
+
           print "msm thres, thres_idx", thres, threshold_index
           vlines(threshold_index, 0.0, 1.0, linewidth=2)
           hlines(thres, 0, cumvar.shape[0], linewidth=2)
