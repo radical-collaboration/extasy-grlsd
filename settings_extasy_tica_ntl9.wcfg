@@ -12,9 +12,9 @@ QUEUE                   = 'high'      #'normal'             # Name of the queue 
 #--------------------------General--------------------------------
 
 WALLTIME                = 1440    #120         # Walltime to be requested for the pilot in minutes
-NODESIZE                = 20
+NODESIZE                = 50
 num_replicas            = 1000                 #total num replica
-num_parallel_MD_sim     = 20    #160           # Total Number of tasks or Compute Units
+num_parallel_MD_sim     = 50    #160           # Total Number of tasks or Compute Units
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
@@ -23,7 +23,7 @@ nsave                   = 1                    # number of iterations after whic
 remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-ntl9-r1000-pcca'   
 
 #--------------------------Simulation--------------------------------
-md_steps                = 10000    #10000=3 min
+md_steps                = 50000    #10000=3 min
 md_dir                  = './files-ntl9/'
 md_input_file           = 'ntl9.pdb'        # Entire path to the MD Input file - Do not use $HOME or the likes
 md_reference            = 'ntl9.pdb'
