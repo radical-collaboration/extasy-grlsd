@@ -66,6 +66,10 @@ class Runticamsm(object):
            dest="Kconfig",
            required=True)
 
+        parser.add_argument("--ref",
+           type=str,
+           dest='ref',
+           required=True)
         return parser
 
     def run(self):
@@ -124,10 +128,15 @@ class Runticamsm(object):
         tica_dim=10
         tica_stride=Kconfig.tica_stride
         if Kconfig.koopman=='yes':
-          tica_weights='koopman'
+          try:
+            tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights='koopman')
+          except:
+            tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights='empirical')     
 	else:
-          tica_weights='empirical'
-        tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights=tica_weights)
+          tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights='empirical')
+        
+        #  tica_weights='empirical', tica_weights='koopman'
+        #tica_obj = pyemma.coordinates.tica(inp, lag=tica_lag, dim=tica_dim, kinetic_map=True, stride=tica_stride, weights=tica_weights)
         print("TICA eigenvalues", tica_obj.eigenvalues)
         print("TICA timescales",tica_obj.timescales)
 
@@ -199,7 +208,6 @@ class Runticamsm(object):
         if Kconfig.strategy=='cmicro':
           state_picks = np.random.choice(np.arange(len(q)), size=n_pick, p=q)
         elif Kconfig.strategy=='cmacro':
-          #try:
           num_eigenvecs_to_compute = 10
           microstate_transitions_used=c
           #cache['too_small']='False'
@@ -256,15 +264,21 @@ class Runticamsm(object):
               cut = kin_cont[kin_cont < kin_cont.max()*frac_kin_content]
               num_macrostates = min(max(cut.shape[0],1),num_visited_microstates)
 
-
-          kmeans_obj = pyemma.coordinates.cluster_kmeans(data=projected_microstate_coords_scaled, k=num_macrostates, max_iter=10)
-
-
-
-          largest_assign=kmeans_obj.assign()[0]
-          all_assign=np.zeros(num_visited_microstates)
-          all_assign[all_connect]=largest_assign
-          all_assign[not_connect]=np.arange(not_connect.shape[0])+largest_assign.max()+1
+          macrostate_method='pcca'
+          #macrostate_method='kmeans'
+          if macrostate_method=='pcca':
+            m.pcca(par_num_macrostates)
+            macrostate_assignments = { k:v for k,v in enumerate(m.metastable_sets) }
+            largest_assign = m.metastable_assignments
+            print('time pcca/macrostate kmeans finished', str(time.time()-time_start))
+          else:
+            kmeans_obj = pyemma.coordinates.cluster_kmeans(data=projected_microstate_coords_scaled, k=num_macrostates, max_iter=10)
+            largest_assign=kmeans_obj.assign()[0]
+            print('time pcca/macrostate kmeans finished', str(time.time()-time_start))
+            all_assign=np.zeros(num_visited_microstates)
+            all_assign[all_connect]=largest_assign
+            all_assign[not_connect]=np.arange(not_connect.shape[0])+largest_assign.max()+1
+          
           macrostate_assignment_of_visited_microstates=all_assign.astype('int')
 
           print("all_assign",all_assign)
@@ -346,7 +360,7 @@ class Runticamsm(object):
         print('time writing new frames finished', str(time.time()-time_start))
         #rg rmsd
  
-        original_file = md.load(args.path+'/iter0_input0.pdb')
+        original_file = md.load(args.path+'/'+args.ref)#'/iter0_input0.pdb')
         out_files=glob.glob(args.path+'/iter*_out*.pdb')
         out_files.sort()
 
@@ -363,11 +377,14 @@ class Runticamsm(object):
 
 
         rg_arr=np.array(rg_arr)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_rg_arr.npy',rg_arr) 
         #print("rg values", rg_arr.min(), rg_arr.max(), rg_arr)
         rmsd_arr=np.array(rmsd_arr)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_rmsd_arr.npy',rmsd_arr)
         #print("rmsd values", rmsd_arr.min(), rmsd_arr.max(), rmsd_arr)
 
         q_arr=np.array(q_arr)
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_q_arr.npy',q_arr)
         #print("Q values", q_arr.min(), q_arr.max(), q_arr)
 
         
@@ -591,6 +608,7 @@ class Runticamsm(object):
 
         p_unique=np.array(p_unique)
 
+        np.save(args.path+'/plot_iter'+str(args.cur_iter)+'_p_unique.npy',p_unique)
         clf()
         fig=figure()
         ax = fig.add_subplot(111)

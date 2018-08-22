@@ -18,7 +18,7 @@ num_parallel_MD_sim     = 20    #160           # Total Number of tasks or Comput
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
-start_iter              = 10                    # Iteration number with which to start
+start_iter              = 12                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
 remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-ala12'   
 
@@ -33,8 +33,8 @@ trajstride              = 10
 #--------------------------Analysis----------------------------------
 
 helper_scripts          = './helper_scripts'
-#koopman                 = 'yes'
-koopman                 = 'no'
+koopman                 = 'yes'
+#koopman                 = 'no'
 #strategy                = 'cmicro'
 #strategy                = 'extend'
 strategy                = 'cmacro'

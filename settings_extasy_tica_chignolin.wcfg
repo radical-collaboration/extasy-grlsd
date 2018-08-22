@@ -12,18 +12,18 @@ QUEUE                   = 'high'      #'normal'             # Name of the queue 
 #--------------------------General--------------------------------
 
 WALLTIME                = 1440    #120         # Walltime to be requested for the pilot in minutes
-NODESIZE                = 20
+NODESIZE                = 10
 num_replicas            = 200                #total num replica
-num_parallel_MD_sim     = 20    #160           # Total Number of tasks or Compute Units
+num_parallel_MD_sim     = 10    #160           # Total Number of tasks or Compute Units
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
-start_iter              = 5                    # Iteration number with which to start
+start_iter              = 4                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
 remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-chignolin'   
 
 #--------------------------Simulation--------------------------------
-md_steps                = 20000    #10000=3min
+md_steps                = 30000    #10000=3min
 md_dir                  = './files-chignolin/'
 md_input_file           = 'chignolin.pdb'        # Entire path to the MD Input file - Do not use $HOME or the likes
 md_run_file             = 'run-openmm-xml.py' #-long.mdp'    #grompp.mdp   # Entire path to the MD Parameters file - Do not use $HOME or the likes
@@ -33,19 +33,19 @@ trajstride              = 10
 #--------------------------Analysis----------------------------------
 
 helper_scripts          = './helper_scripts'
-#koopman                 = 'yes'
-koopman                 = 'no'
+koopman                 = 'yes'
+#koopman                 = 'no'
 #strategy                = 'cmicro'
 #strategy                = 'extend'
 strategy                = 'cmacro'
 
 select_n_macro_type     = 'const'    #'kin_content'
 
-tica_lag                = 10
+tica_lag                = 2
 tica_stride             = 1
 msm_stride              = 1
 msm_states              = 100
-msm_lag                 = 10
+msm_lag                 = 2
 
 #obsolete
 #lsdm_config_file     = './inp_files/config.ini'       # Entire path to the LSDMap configuration file - Do not use $HOME or the likes

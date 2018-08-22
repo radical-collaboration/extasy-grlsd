@@ -55,8 +55,8 @@ def create_workflow(Kconfig,args):
       pre_proc_task2.arguments = ['-l']
       pre_proc_task2.copy_input_data = ['$SHARED/%s > %s/%s' % (args.Kconfig,combined_path, args.Kconfig),
                                      '$SHARED/run-tica-msm.py > %s/run-tica-msm.py' % combined_path,
-                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file)
-                                       ]
+                                     '$SHARED/%s > %s/%s' % (Kconfig.md_run_file,combined_path,Kconfig.md_run_file),
+                                       '$SHARED/%s > %s/%s' % (Kconfig.md_reference, combined_path, Kconfig.md_reference)]
 
 
       pre_proc_task_ref2 = '$Pipeline_%s_Stage_%s_Task_%s' % (wf.uid, pre_proc_stage2.uid, pre_proc_task2.uid)
@@ -159,7 +159,7 @@ def create_workflow(Kconfig,args):
           ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module load bwpy/1.2.4','module add bwpy-mpi', 'module add fftw/3.3.4.10', 'module add cray-netcdf', 'module add cudatoolkit/9.1.85_3.10-1.0502.df1cc54.3.1', 'module add cmake/3.1.3', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy3/bin/activate', 
                               'export tasks=tica_msm_ana', 'export PYEMMA_NJOBS=1', 'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
           ana_task.executable = ['python']
-          ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '>', 'analyse.log']
+          ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '--ref', str(Kconfig.md_reference), '>', 'analyse.log']
 
           ana_task.cpu_reqs = { 'processes': 1,
                                     'process_type': 'MPI',
@@ -274,7 +274,8 @@ if __name__ == '__main__':
                                           '%s/run-tica-msm.py' % Kconfig.helper_scripts]
         else:
           shared_data_all=shared_data_all+[Kconfig.md_dir+Kconfig.md_input_file,
-                                           Kconfig.md_dir+Kconfig.md_run_file,
+                                           Kconfig.md_dir+Kconfig.md_reference,
+                                           Kconfig.md_run_dir+Kconfig.md_run_file,
                                           '%s/run-tica-msm.py' % Kconfig.helper_scripts]
         print "shared_data_all", shared_data_all 
        #if Kconfig.ndx_file is not None:
