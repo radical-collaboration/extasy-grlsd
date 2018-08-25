@@ -459,8 +459,6 @@ class Runticamsm(object):
         plot(cumvar, linewidth=2)
         for thres in [0.5,0.8,0.95]:
           threshold_index=np.argwhere(cumvar > thres)[0][0]
-m itertools import combinations
-
           print "msm thres, thres_idx", thres, threshold_index
           vlines(threshold_index, 0.0, 1.0, linewidth=2)
           hlines(thres, 0, cumvar.shape[0], linewidth=2)
@@ -503,9 +501,9 @@ m itertools import combinations
 
         #plot msm ev
         clf()
+        fig, ax = plots.plot_free_energy(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], cmap='Spectral', weights=m.stationary_distribution, nbins=30)
         xlabel("MSM ev1")
         ylabel("MSM ev2")
-        fig, ax = plots.plot_free_energy(m.eigenvectors_right(10)[:,1], m.eigenvectors_right(10)[:,2], cmap='Spectral', weights=m.stationary_distribution, nbins=30)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_evs2.png', bbox_inches='tight', dpi=200)
 
         clf()
@@ -528,9 +526,9 @@ m itertools import combinations
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_qrg.png', bbox_inches='tight', dpi=200)
 
         clf()
+        fig, ax = plots.plot_free_energy(q_arr, rg_arr, cmap='Spectral', nbins=10)
         xlabel("Q")
         ylabel("Rg")
-        fig, ax = plots.plot_free_energy(q_arr, rg_arr, cmap='Spectral', nbins=10)
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_qrg_2.png', bbox_inches='tight', dpi=200)
 
         #Q 1d free energy
@@ -589,12 +587,12 @@ m itertools import combinations
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_cktest.png')
         
 
-        lags = [1,2,5,10,20,50,100,200, 500,1000]
-        its = pyemma.msm.its(dtrajs, nits=10, lags=lags)
-        clf()
-        pyemma.plots.plot_implied_timescales(its, ylog=True, units='steps', linewidth=2)
+        #lags = [1,2,5,10,20,50,100,200, 500,1000]
+        #its = pyemma.msm.its(dtrajs, nits=10, lags=lags)
+        #clf()
+        #pyemma.plots.plot_implied_timescales(its, ylog=True, units='steps', linewidth=2)
         #xlim(0, 40); ylim(0, 120);
-        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its.png', bbox_inches='tight', dpi=200)
+        #savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its.png', bbox_inches='tight', dpi=200)
 
         
         its = pyemma.msm.its(dtrajs, errors='bayes', nits=10)
@@ -603,10 +601,10 @@ m itertools import combinations
         #xlim(0, 40); ylim(0, 120);
         savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its2.png', bbox_inches='tight', dpi=200)
  
-        clf()
-        pyemma.plots.plot_implied_timescales(its, ylog=False, units='steps', linewidth=2, show_mle=False)
-        #xlim(0, 40); ylim(0, 120);
-        savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its3.png', bbox_inches='tight', dpi=200)
+        #clf()
+        #pyemma.plots.plot_implied_timescales(its, ylog=False, units='steps', linewidth=2, show_mle=False)
+        ##xlim(0, 40); ylim(0, 120);
+        #savefig(args.path+'/plot_iter'+str(args.cur_iter)+'_msm_its3.png', bbox_inches='tight', dpi=200)
 
 
         #which msm states selected

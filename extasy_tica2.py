@@ -91,7 +91,7 @@ def create_workflow(Kconfig,args):
           sim_task = Task()
           sim_task.executable = ['python']
           
-	  pre_exec_arr = [ 'module swap PrgEnv-cray PrgEnv-gnu','module load bwpy/1.2.4','module add bwpy-mpi', 'module add fftw/3.3.4.10', 'module add cray-netcdf', 'module add cudatoolkit/9.1.85_3.10-1.0502.df1cc54.3.1', 'module add cmake/3.1.3', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy3/bin/activate', 
+	  pre_exec_arr = [ 'module swap PrgEnv-cray PrgEnv-gnu','module load bwpy/1.2.5','module add bwpy-mpi', 'module add fftw/3.3.4.10', 'module add cray-netcdf', 'module add cudatoolkit/9.1.85_3.10-1.0502.df1cc54.3.1', 'module add cmake/3.1.3', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy4/bin/activate', 
                                      'export tasks=md','export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
           #if cur_iter==0 and num_allocated_rep==0:
           #  pre_exec_arr = pre_exec_arr + [ 'mv %s']
@@ -156,7 +156,7 @@ def create_workflow(Kconfig,args):
         if str(Kconfig.strategy)!='extend':
           ana_stage = Stage()
           ana_task = Task()
-          ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module load bwpy/1.2.4','module add bwpy-mpi', 'module add fftw/3.3.4.10', 'module add cray-netcdf', 'module add cudatoolkit/9.1.85_3.10-1.0502.df1cc54.3.1', 'module add cmake/3.1.3', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy3/bin/activate', 
+          ana_task.pre_exec = [ 'module swap PrgEnv-cray PrgEnv-gnu','module load bwpy/1.2.5','module add bwpy-mpi', 'module add fftw/3.3.4.10', 'module add cray-netcdf', 'module add cudatoolkit/9.1.85_3.10-1.0502.df1cc54.3.1', 'module add cmake/3.1.3', 'module unload darshan xalt','export CRAYPE_LINK_TYPE=dynamic', 'export CRAY_ADD_RPATH=yes', 'export FC=ftn', 'source /projects/sciteam/bamm/hruska/vpy4/bin/activate', 
                               'export tasks=tica_msm_ana', 'export PYEMMA_NJOBS=1', 'export iter=%s' % cur_iter, 'export OMP_NUM_THREADS=1' ]
           ana_task.executable = ['python']
           ana_task.arguments = ['run-tica-msm.py', '--path',combined_path,'--n_select', str(num_replicas),'--cur_iter',str(cur_iter), '--Kconfig', str(args.Kconfig), '--ref', str(Kconfig.md_reference), '>', 'analyse.log']

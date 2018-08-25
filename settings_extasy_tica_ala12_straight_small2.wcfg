@@ -18,9 +18,9 @@ num_parallel_MD_sim     = 4    #160           # Total Number of tasks or Compute
 CPUs_per_NODE           = 16                   # each replica uses that many Cus
 
 num_iterations          = 50                    # Number of iterations of Simulation-Analysis
-start_iter              = 18                    # Iteration number with which to start
+start_iter              = 0                    # Iteration number with which to start
 nsave                   = 1                    # number of iterations after which output is transfered to local machine
-remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-ala12-straight-small'   
+remote_output_directory = '/u/sciteam/hruska/scratch/extasy-tica-ala12-straight-small2'   
 
 #--------------------------Simulation--------------------------------
 md_steps                = 10000    #10000=10sec, 100000= 2 min, 1000000 = 20 min
