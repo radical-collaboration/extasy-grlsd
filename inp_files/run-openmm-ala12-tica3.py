@@ -5,11 +5,11 @@ from sys import stdout
 import os
 import mdtraj
 import mdtraj.reporters
-
+import pyemma
 from datetime import datetime
 import argparse
 import glob
-
+import numpy as np
 
 
 platformNames = [Platform.getPlatform(i).getName() for i in range(Platform.getNumPlatforms())]
@@ -81,7 +81,7 @@ for i in range(args.idxstart,args.idxend):
 print('STARTING npy production')
 pdb_file=glob.glob(args.path+'/iter0_input0.pdb')[0]
 
-topfile = md.load(pdb_file)
+topfile = mdtraj.load(pdb_file)
 featurizer = pyemma.coordinates.featurizer(topfile)
 featurizer.add_residue_mindist(residue_pairs='all', scheme='closest-heavy')
 featurizer.add_backbone_torsions(cossin=True)
@@ -89,7 +89,7 @@ featurizer.dimension()
 for i in range(args.idxstart,args.idxend):
         print("npy "+str(i)+" from "+ str(args.idxend))
         time_start=time.time()
-        inp = pyemma.coordinates.source(args.path+'/iter'+str(args.iter)+'_input'+str(i)+'.pdb', featurizer)
+        inp = pyemma.coordinates.source(args.path+'/iter'+str(args.iter)+'_traj'+str(i)+'.dcd', featurizer)
         get_out=inp.get_output()[0]
         np.save(args.path+'/iter_'+str(args.iter)+'_traj'+str(i)+'.npy',get_out)
         time_end=time.time()

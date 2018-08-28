@@ -115,7 +115,7 @@ class Runticamsm(object):
         traj_files.sort()
         get_out_arr=[]
         for i, file in enumerate(traj_files_npy):
-          get_out_arr=get_out_arr+[np.load('inp_'+str(i)+'.npy')]
+          get_out_arr=get_out_arr+[np.load(file)]
         #topfile = md.load(pdb_file)
         #featurizer = pyemma.coordinates.featurizer(topfile)
         #featurizer.add_residue_mindist(residue_pairs='all', scheme='closest-heavy')
@@ -132,7 +132,7 @@ class Runticamsm(object):
 
         
         tica_lag=Kconfig.tica_lag#1
-        tica_dim=10
+        tica_dim=Kconfig.tica_dim
         tica_stride=Kconfig.tica_stride
         if Kconfig.koopman=='yes':
           try:

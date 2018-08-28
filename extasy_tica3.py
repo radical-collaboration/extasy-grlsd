@@ -108,7 +108,7 @@ def create_workflow(Kconfig,args):
                                   }
           sim_task.arguments = ['run_openmm.py',
                                   '--trajstride', str(Kconfig.trajstride), '--idxstart',str(num_allocated_rep), '--idxend',str((num_allocated_rep+use_replicas)),
-                                  '--path',combined_path,'--iter',str(cur_iter), #'--tica_lag', Kconfig.tica_lag, '--tica_dim', Kconfig.tica_dim, '--tica_stride', Kconfig.tica_stride,
+                                  '--path',combined_path,'--iter',str(cur_iter),
                                   '--md_steps',str(Kconfig.md_steps), '--save_traj', 'True','>', 'md.log']
           if Kconfig.md_use_xml=='yes':
             link_arr=['$SHARED/%s > run_openmm.py' % (os.path.basename(Kconfig.md_run_file)),
